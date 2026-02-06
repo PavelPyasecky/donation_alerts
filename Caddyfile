@@ -1,0 +1,19 @@
+{$DOMAIN} {
+    handle_path /api* {
+        reverse_proxy api:8000
+    }
+
+    handle /rabbitmq* {
+        reverse_proxy rabbitmq:15672
+    }
+}
+
+http://{$PUBLIC_IP} {
+    handle_path /api* {
+        reverse_proxy api:8000
+    }
+
+    handle /rabbitmq* {
+        reverse_proxy rabbitmq:15672
+    }
+}
