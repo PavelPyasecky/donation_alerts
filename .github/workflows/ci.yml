@@ -28,7 +28,7 @@ jobs:
         run: |
           if command -v docker >/dev/null 2>&1; then
             export COMPOSE_PARALLEL_LIMIT=1
-            docker compose -f $DOCKER_COMPOSE_FILE --build
+            docker compose -f $DOCKER_COMPOSE_FILE build
           else
             echo "No docker compose or Dockerfile found; skipping docker build"
           fi
