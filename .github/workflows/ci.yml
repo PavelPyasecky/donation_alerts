@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Docker build check
+        run: |
+          if command -v docker >/dev/null 2>&1; then
+            if [ -f "docker-compose.yml" ] || [ -f "docker-compose.yaml" ]; then
+              export COMPOSE_PARALLEL_LIMIT=1
+              docker compose -f docker-compose.yml build
+            elif [ -f "Dockerfile" ] || [ -f "docker/Dockerfile" ]; then
+              DOCKERFILE_PATH="Dockerfile"
+              if [ -f "docker/Dockerfile" ]; then
+                DOCKERFILE_PATH="docker/Dockerfile"
+              fi
+              docker build -f "$DOCKERFILE_PATH" .
+            else
+              echo "No docker compose or Dockerfile found; skipping docker build."
+            fi
+          else
+            echo "Docker not installed; skipping docker build."
+          fi

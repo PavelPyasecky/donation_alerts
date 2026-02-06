@@ -1,0 +1,94 @@
+name: Deploy Main
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  DEPLOY_PATH: /root/donation_alerts
+  REPO_URL: git@github.com:${{ github.repository }}.git
+  SERVICE_NAME: donation-alerts
+  HEALTHCHECK_URL: ""
+  DOCKER_COMPOSE_FILE: docker-compose.yml
+
+jobs:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Agent
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$PROD_VPS_HOST" >> ~/.ssh/known_hosts
+          eval $(ssh-agent -s)
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+
+      - name: Deploy to VPS
+        env:
+          PROD_VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ENV_CONTENT=$(echo "$PROD_ENV_FILE" | base64 | tr -d '\n')
+          SHORT_SHA=$(echo $COMMIT_SHA | cut -c1-8)
+
+          ssh -A -o StrictHostKeyChecking=no $PROD_VPS_USER@$PROD_VPS_HOST << EOF
+            set -e
+
+            if [ -z "$DEPLOY_PATH" ] || [ "$DEPLOY_PATH" = "/" ]; then
+              echo "Error: Invalid DEPLOY_PATH"
+              exit 1
+            fi
+
+            mkdir -p $DEPLOY_PATH
+            cd $DEPLOY_PATH
+
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin $REPO_URL
+            fi
+
+            git remote set-url origin $REPO_URL
+            git fetch --all --prune
+
+            git reset --hard $COMMIT_SHA
+            git clean -fdx
+
+            echo "$ENV_CONTENT" | base64 -d > .env
+            echo "VERSION=$SHORT_SHA" >> .env
+
+            if ! command -v uv >/dev/null 2>&1; then
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              export PATH="\$HOME/.local/bin:\$PATH"
+            fi
+
+            uv python install 3.14
+            uv sync --frozen --python 3.14
+
+            if command -v docker >/dev/null 2>&1; then
+              export COMPOSE_PARALLEL_LIMIT=1
+              docker compose -f $DOCKER_COMPOSE_FILE up -d --build
+            else
+              echo "Warning: docker not installed on host; skipping compose up."
+            fi
+            
+          EOF
