@@ -1,12 +1,25 @@
 services:
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - rabbitmq
+
   api:
     build: .
     ports:
       - "8000:8000"
     env_file:
       - .env
-    environment:
-      RMQ_URL: ${RMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -16,11 +29,14 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+volumes:
+  caddy_data:
+  caddy_config:
