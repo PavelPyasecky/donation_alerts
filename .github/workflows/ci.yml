@@ -27,9 +27,18 @@ jobs:
       - name: Docker build check
         run: |
           if command -v docker >/dev/null 2>&1; then
-            export COMPOSE_PARALLEL_LIMIT=1
-            docker compose -f $DOCKER_COMPOSE_FILE build
+            if [ -f "docker-compose.yml" ] || [ -f "docker-compose.yaml" ]; then
+              export COMPOSE_PARALLEL_LIMIT=1
+              docker compose -f docker-compose.yml build
+            elif [ -f "Dockerfile" ] || [ -f "docker/Dockerfile" ]; then
+              DOCKERFILE_PATH="Dockerfile"
+              if [ -f "docker/Dockerfile" ]; then
+                DOCKERFILE_PATH="docker/Dockerfile"
+              fi
+              docker build -f "$DOCKERFILE_PATH" .
+            else
+              echo "No docker compose or Dockerfile found; skipping docker build."
+            fi
           else
-            echo "No docker compose or Dockerfile found; skipping docker build"
+            echo "Docker not installed; skipping docker build."
           fi
-          EOF
