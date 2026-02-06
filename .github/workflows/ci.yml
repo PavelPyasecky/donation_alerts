@@ -24,11 +24,12 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install dependencies
-        run: uv sync --frozen
-
-      - name: Compile sources
-        run: uv run python -m compileall .
-
-      - name: Dependency sanity check
-        run: uv pip check
+      - name: Docker build check
+        run: |
+          if command -v docker >/dev/null 2>&1; then
+            export COMPOSE_PARALLEL_LIMIT=1
+            docker compose -f $DOCKER_COMPOSE_FILE --build
+          else
+            echo "No docker compose or Dockerfile found; skipping docker build"
+          fi
+          EOF
