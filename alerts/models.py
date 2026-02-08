@@ -5,12 +5,10 @@ from pydantic import BaseModel
 
 
 class AlertSettings(BaseModel):
-    text_color: str
+    max_message_length: int
     font_size: int
-    image_url: str
-    sound_url: str
-    animation_type: str
     min_amount: float
+    enable_alerts: bool
 
 
 class Alert(BaseModel):
@@ -18,7 +16,9 @@ class Alert(BaseModel):
     author_id: int
     amount: float
     message: str
-    settings: AlertSettings
+    video_url: str
+    sound_url: str
+    alert_settings: AlertSettings
     donation_id: int
     timestamp: datetime.datetime
 
