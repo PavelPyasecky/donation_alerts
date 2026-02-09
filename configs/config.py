@@ -20,3 +20,19 @@ def getenv(name: str) -> str:
 RMQ_URL = getenv("RMQ_URL")
 ALERTS_EXCHANGE = getenv("ALERTS_EXCHANGE")
 ALERT_STATUS_QUEUE = getenv("ALERT_STATUS_QUEUE")
+
+
+ALLOWED_HOSTS = [
+    url.strip()
+    for url in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if url.strip()
+]
+
+
+CORS_ALLOWED_ORIGINS = [
+    url.strip()
+    for url in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if url.strip()
+]
+
+
