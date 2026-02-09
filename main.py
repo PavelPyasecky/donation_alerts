@@ -1,6 +1,8 @@
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from alerts.rabbitmq_service import rabbitmq_consumer
 from alerts.routers import router
@@ -27,6 +29,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
