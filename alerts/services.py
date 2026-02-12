@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import jwt
 import logging
 
 from aio_pika import Message
@@ -8,7 +9,7 @@ from aio_pika.abc import AbstractExchange
 from fastapi import WebSocketDisconnect
 
 from alerts.websocket import ws_manager
-from alerts.models import Alert, AlertStatus, Statuses
+from alerts.models import Alert, AlertStatus, Statuses, WidgetTokenInfo
 from configs import config
 
 
@@ -46,3 +47,12 @@ def get_status_publisher(exchange: AbstractExchange):
         )
     
     return wrapper
+
+
+def decode_custom_jwt(token: str) -> WidgetTokenInfo:
+    secret_key = config.WIDGET_TOKEN_SECRET
+    algorithm = 'HS256'
+
+    payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+    
+    return WidgetTokenInfo(**payload)
