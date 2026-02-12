@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import jwt
 import logging
 
 from aio_pika import Message
@@ -8,7 +9,7 @@ from aio_pika.abc import AbstractExchange
 from fastapi import WebSocketDisconnect
 
 from alerts.websocket import ws_manager
-from alerts.models import Alert, AlertStatus, MessageTypes, Statuses, WidgetMessage
+from alerts.models import Alert, AlertStatus, MessageTypes, Statuses, WidgetTokenInfo, WidgetMessage
 from cache.redis import get_redis_conn
 from configs import config
 
@@ -57,3 +58,12 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
                     )  # Save info that streamer is online in redis
 
     return wrapper
+
+
+def decode_custom_jwt(token: str) -> WidgetTokenInfo:
+    secret_key = config.WIDGET_TOKEN_SECRET
+    algorithm = 'HS256'
+
+    payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+    
+    return WidgetTokenInfo(**payload)

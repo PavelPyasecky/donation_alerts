@@ -35,6 +35,11 @@ class AlertStatus(BaseModel):
     delivered_at: datetime.datetime
 
 
+class WidgetTokenInfo(BaseModel):
+    author_id: int
+    created_at: datetime.datetime
+
+
 class MessageTypes(Enum):
     alert_status = "alert_status"
     widget_status = "widget_status"
