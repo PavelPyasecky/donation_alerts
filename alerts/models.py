@@ -33,3 +33,8 @@ class AlertStatus(BaseModel):
     status: Statuses
     external_id: str
     delivered_at: datetime.datetime
+
+
+class WidgetTokenInfo(BaseModel):
+    author_id: int
+    iat: datetime.datetime

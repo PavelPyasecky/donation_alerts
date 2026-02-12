@@ -20,6 +20,7 @@ def getenv(name: str) -> str:
 RMQ_URL = getenv("RMQ_URL")
 ALERTS_EXCHANGE = getenv("ALERTS_EXCHANGE")
 ALERT_STATUS_QUEUE = getenv("ALERT_STATUS_QUEUE")
+WIDGET_TOKEN_SECRET = getenv("WIDGET_TOKEN_SECRET")
 
 
 ALLOWED_HOSTS = [
