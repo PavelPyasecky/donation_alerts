@@ -37,4 +37,4 @@ class AlertStatus(BaseModel):
 
 class WidgetTokenInfo(BaseModel):
     author_id: int
-    iat: datetime.datetime
+    created_at: datetime.datetime
