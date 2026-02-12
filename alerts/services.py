@@ -8,7 +8,8 @@ from aio_pika.abc import AbstractExchange
 from fastapi import WebSocketDisconnect
 
 from alerts.websocket import ws_manager
-from alerts.models import Alert, AlertStatus, Statuses
+from alerts.models import Alert, AlertStatus, MessageTypes, Statuses, WidgetMessage
+from cache.redis import get_redis_conn
 from configs import config
 
 
@@ -38,11 +39,21 @@ async def send_alert_to_author_service(
             )
 
 
-def get_status_publisher(exchange: AbstractExchange):
-    async def wrapper(status_data: dict):
-        await exchange.publish(
-            message=Message(body=json.dumps(status_data).encode()),
-            routing_key=config.ALERT_STATUS_QUEUE,
-        )
-    
+def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
+    async def wrapper(message_data: dict):
+        message = WidgetMessage(**message_data)
+
+        match message.type_:
+            case MessageTypes.alert_status:
+                await exchange.publish(
+                    message=Message(body=message.data.model_dump_json().encode()),
+                    routing_key=config.ALERT_STATUS_QUEUE,
+                )
+            case MessageTypes.widget_status:
+                if message.data.is_online:
+                    redis_conn = get_redis_conn()
+                    await redis_conn.setex(
+                        f"streamer:{author_id}:online", 60, 1
+                    )  # Save info that streamer is online in redis
+
     return wrapper

@@ -21,6 +21,12 @@ RMQ_URL = getenv("RMQ_URL")
 ALERTS_EXCHANGE = getenv("ALERTS_EXCHANGE")
 ALERT_STATUS_QUEUE = getenv("ALERT_STATUS_QUEUE")
 
+REDIS_USER = os.getenv("REDIS_USER")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+REDIS_HOST = getenv("REDIS_HOST")
+REDIS_PORT = getenv("REDIS_PORT")
+REDIS_DB = getenv("REDIS_DB")
+
 
 ALLOWED_HOSTS = [
     url.strip()
@@ -34,5 +40,3 @@ CORS_ALLOWED_ORIGINS = [
     for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if url.strip()
 ]
-
-
