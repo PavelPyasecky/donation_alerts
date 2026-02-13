@@ -9,8 +9,15 @@ from aio_pika.abc import AbstractExchange
 from fastapi import WebSocketDisconnect
 
 from alerts.websocket import ws_manager
-from alerts.models import Alert, AlertStatus, MessageTypes, Statuses, WidgetTokenInfo, WidgetMessage
-from cache.redis import get_redis_conn
+from alerts.models import (
+    Alert,
+    AlertStatus,
+    MessageTypes,
+    Statuses,
+    WidgetTokenInfo,
+    WidgetMessage,
+)
+from configs.redis import get_redis_conn
 from configs import config
 
 
@@ -53,17 +60,15 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
             case MessageTypes.widget_status:
                 if message.data.is_online:
                     redis_conn = get_redis_conn()
-                    await redis_conn.setex(
-                        f"streamer:{author_id}:online", 60, 1
-                    )  # Save info that streamer is online in redis
+                    await redis_conn.setex(f"streamer:{author_id}:online", 60, 1)
 
     return wrapper
 
 
 def decode_custom_jwt(token: str) -> WidgetTokenInfo:
     secret_key = config.WIDGET_TOKEN_SECRET
-    algorithm = 'HS256'
+    algorithm = "HS256"
 
     payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-    
+
     return WidgetTokenInfo(**payload)
