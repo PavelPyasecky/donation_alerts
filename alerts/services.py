@@ -9,7 +9,15 @@ from aio_pika.abc import AbstractExchange
 from fastapi import WebSocketDisconnect
 
 from alerts.websocket import ws_manager
-from alerts.models import Alert, AlertStatus, Statuses, WidgetTokenInfo
+from alerts.models import (
+    Alert,
+    AlertStatus,
+    MessageTypes,
+    Statuses,
+    WidgetTokenInfo,
+    WidgetMessage,
+)
+from configs.redis import get_redis_conn
 from configs import config
 
 
@@ -39,20 +47,28 @@ async def send_alert_to_author_service(
             )
 
 
-def get_status_publisher(exchange: AbstractExchange):
-    async def wrapper(status_data: dict):
-        await exchange.publish(
-            message=Message(body=json.dumps(status_data).encode()),
-            routing_key=config.ALERT_STATUS_QUEUE,
-        )
-    
+def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
+    async def wrapper(message_data: dict):
+        message = WidgetMessage(**message_data)
+
+        match message.type_:
+            case MessageTypes.alert_status:
+                await exchange.publish(
+                    message=Message(body=message.data.model_dump_json().encode()),
+                    routing_key=config.ALERT_STATUS_QUEUE,
+                )
+            case MessageTypes.widget_status:
+                if message.data.is_online:
+                    redis_conn = get_redis_conn()
+                    await redis_conn.setex(f"streamer:{author_id}:online", 60, 1)
+
     return wrapper
 
 
 def decode_custom_jwt(token: str) -> WidgetTokenInfo:
     secret_key = config.WIDGET_TOKEN_SECRET
-    algorithm = 'HS256'
+    algorithm = "HS256"
 
     payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-    
+
     return WidgetTokenInfo(**payload)

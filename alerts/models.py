@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AlertSettings(BaseModel):
@@ -31,10 +31,23 @@ class Statuses(Enum):
 class AlertStatus(BaseModel):
     alert_id: int
     status: Statuses
-    external_id: str
     delivered_at: datetime.datetime
 
 
 class WidgetTokenInfo(BaseModel):
     author_id: int
     created_at: datetime.datetime
+
+
+class MessageTypes(Enum):
+    alert_status = "alert_status"
+    widget_status = "widget_status"
+
+
+class WidgetStatus(BaseModel):
+    is_online: bool
+
+
+class WidgetMessage(BaseModel):
+    type_: MessageTypes = Field(alias="type")
+    data: AlertStatus | WidgetStatus
