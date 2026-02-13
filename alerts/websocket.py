@@ -28,7 +28,7 @@ class WebSocketManager:
                 if on_message:
                     await on_message(data)
             except WebSocketDisconnect:
-                await self.disconnect()
+                await self.disconnect(author_id)
 
     async def disconnect(self, author_id: int):
         await self.connections[author_id].close()
