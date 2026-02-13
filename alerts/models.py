@@ -31,7 +31,6 @@ class Statuses(Enum):
 class AlertStatus(BaseModel):
     alert_id: int
     status: Statuses
-    external_id: str
     delivered_at: datetime.datetime
 
 

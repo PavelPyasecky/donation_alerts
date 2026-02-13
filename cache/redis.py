@@ -9,4 +9,5 @@ def get_redis_conn():
         password=config.REDIS_PASSWORD,
         host=config.REDIS_HOST,
         port=config.REDIS_PORT,
+        db=config.REDIS_DB,
     )
