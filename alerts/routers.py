@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, WebSocket
 import jwt
 
@@ -14,9 +15,13 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
     try:
         widget_token_info = decode_custom_jwt(widget_token)
     except jwt.InvalidTokenError as e:
+        logging.error(f"WS connection error: {e}")
         await websocket.close(400, f"invalid widget_token: {e}")
         return
 
     await ws_manager.connect(widget_token_info.author_id, websocket)
     exchange = await rabbitmq_consumer.create_listener(widget_token_info.author_id)
-    await ws_manager.listen(widget_token_info.author_id, get_ws_messages_handler(widget_token_info.author_id, exchange))
+    await ws_manager.listen(
+        widget_token_info.author_id,
+        get_ws_messages_handler(widget_token_info.author_id, exchange),
+    )
