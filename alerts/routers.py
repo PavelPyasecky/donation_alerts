@@ -14,7 +14,7 @@ router = APIRouter()
 async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
     try:
         widget_token_info = decode_custom_jwt(widget_token)
-    except jwt.InvalidTokenError as e:
+    except Exception as e:
         logging.error(f"WS connection error: {e}")
         await websocket.close(400, f"invalid widget_token: {e}")
         return
