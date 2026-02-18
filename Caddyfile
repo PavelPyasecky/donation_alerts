@@ -1,4 +1,4 @@
-{$DOMAIN} {
+{$DOMAIN}, http://{$PUBLIC_IP} {
     handle_path /api* {
         reverse_proxy api:8000
     }
@@ -8,12 +8,6 @@
     }
 }
 
-http://{$PUBLIC_IP} {
-    handle_path /api* {
-        reverse_proxy api:8000
-    }
-
-    handle /rabbitmq* {
-        reverse_proxy rabbitmq:15672
-    }
+{$API_DOMAIN} {
+    reverse_proxy api:8000
 }
