@@ -37,6 +37,7 @@ class AlertStatus(BaseModel):
 class WidgetTokenInfo(BaseModel):
     author_id: int
     created_at: datetime.datetime
+    control_uuid: str
 
 
 class MessageTypes(Enum):
