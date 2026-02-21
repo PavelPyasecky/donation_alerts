@@ -1,5 +1,6 @@
-from fastapi import APIRouter, WebSocket, WebSocketException, status
 import jwt
+
+from fastapi import APIRouter, WebSocket, WebSocketException, status
 
 from alerts.rabbitmq_service import rabbitmq_consumer
 from alerts.services import check_widget_token, decode_custom_jwt, get_ws_messages_handler
@@ -21,4 +22,7 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
 
     await ws_manager.connect(widget_token_info.author_id, websocket)
     exchange = await rabbitmq_consumer.create_listener(widget_token_info.author_id)
-    await ws_manager.listen(widget_token_info.author_id, get_ws_messages_handler(widget_token_info.author_id, exchange))
+    await ws_manager.listen(
+        widget_token_info.author_id,
+        get_ws_messages_handler(widget_token_info.author_id, exchange),
+    )

@@ -16,6 +16,7 @@ class Alert(BaseModel):
     author_id: int
     amount: float
     message: str
+    donor_name: str
     video_url: str
     sound_url: str
     alert_settings: AlertSettings
