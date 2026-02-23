@@ -34,7 +34,7 @@ class WebSocketManager:
                 await self.disconnect(author_id)
 
     async def disconnect(self, author_id: int):
-        if not self.connections[author_id]:
+        if self.connections.get(author_id) is None:
             logging.warning(f"Ws connection to author {author_id} not exists")
             return
         if self.connections[author_id].client_state != WebSocketState.DISCONNECTED:
