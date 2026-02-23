@@ -13,6 +13,7 @@ from alerts.models import (
     Alert,
     AlertStatus,
     MessageTypes,
+    RabbitMQAlertStatus,
     Statuses,
     WidgetTokenInfo,
     WidgetMessage,
@@ -53,8 +54,9 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
 
         match message.type_:
             case MessageTypes.alert_status:
+                alert_status = RabbitMQAlertStatus(author_id=author_id, **message.data.model_dump())
                 await exchange.publish(
-                    message=Message(body=message.data.model_dump_json().encode()),
+                    message=Message(body=alert_status.model_dump_json().encode()),
                     routing_key=config.ALERT_STATUS_QUEUE,
                 )
             case MessageTypes.widget_status:
