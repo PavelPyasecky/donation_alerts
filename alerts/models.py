@@ -34,6 +34,10 @@ class AlertStatus(BaseModel):
     delivered_at: datetime.datetime
 
 
+class RabbitMQAlertStatus(AlertStatus):
+    author_id: int
+
+
 class WidgetTokenInfo(BaseModel):
     author_id: int
     created_at: datetime.datetime
