@@ -3,6 +3,7 @@ import asyncio
 import logging
 from typing import Dict
 from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.websockets import WebSocketState
 
 
 class WebSocketManager:
@@ -31,7 +32,8 @@ class WebSocketManager:
                 await self.disconnect(author_id)
 
     async def disconnect(self, author_id: int):
-        await self.connections[author_id].close()
+        if self.connections[author_id].client_state != WebSocketState.DISCONNECTED:
+            await self.connections[author_id].close()
         async with self.lock:
             if author_id in self.connections:
                 del self.connections[author_id]
