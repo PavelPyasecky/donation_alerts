@@ -3,7 +3,6 @@ import asyncio
 import logging
 from typing import Dict
 from fastapi import WebSocket, WebSocketDisconnect
-from fastapi.websockets import WebSocketState
 
 
 class WebSocketManager:
@@ -34,11 +33,7 @@ class WebSocketManager:
                 await self.disconnect(author_id)
 
     async def disconnect(self, author_id: int):
-        if self.connections.get(author_id) is None:
-            logging.warning(f"Ws connection to author {author_id} not exists")
-            return
-        if self.connections[author_id].client_state != WebSocketState.DISCONNECTED:
-            await self.connections[author_id].close()
+        await self.connections[author_id].close()
         async with self.lock:
             if author_id in self.connections:
                 del self.connections[author_id]
