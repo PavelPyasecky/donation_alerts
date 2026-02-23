@@ -28,7 +28,8 @@ class WebSocketManager:
                 data = await websocket.receive_json()
                 if on_message:
                     await on_message(data)
-            except WebSocketDisconnect:
+            except (WebSocketDisconnect, RuntimeError) as e:
+                logging.error(f"Error when try to listen websocat {author_id}: {e}")
                 await self.disconnect(author_id)
 
     async def disconnect(self, author_id: int):
