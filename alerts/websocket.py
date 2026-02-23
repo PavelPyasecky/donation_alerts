@@ -20,6 +20,7 @@ class WebSocketManager:
 
     async def listen(self, author_id: int, on_message: callable = None):
         if author_id not in self.connections:
+            logging.warning(f"Ws connection to author {author_id} not exists")
             return
         
         websocket = self.connections[author_id]
