@@ -1,52 +1,48 @@
 import asyncio
-
 import logging
-from typing import Dict
-from fastapi import WebSocket, WebSocketDisconnect
+
+from fastapi import WebSocketException, status
+from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 
-class WebSocketManager:
+class WSManager:
     def __init__(self):
-        self.connections: Dict[int, WebSocket] = {}
         self.lock = asyncio.Lock()
-
+        self.connections: dict[int, list[WebSocket]] = {}
 
     async def connect(self, author_id: int, websocket: WebSocket):
         await websocket.accept()
-        async with self.lock:
-            self.connections[author_id] = websocket
-    
+        if websocket.client_state != WebSocketState.CONNECTED:
+            logging.error(f"Websocket accept error: websocket status {websocket.client_state}")
+            return WebSocketException(
+                status.WS_1006_ABNORMAL_CLOSURE, f"Websocket accept error: websocket status {websocket.client_state}"
+            )
+        async with self.lock():
+            if author_id not in self.connections:
+                self.connections[author_id] = []
+            self.connections[author_id].append(WebSocket)
 
-    async def listen(self, author_id: int, on_message: callable = None):
+    async def clear_disconnected(self, author_id: int):
         if author_id not in self.connections:
-            logging.warning(f"Ws connection to author {author_id} not exists")
             return
-        
-        websocket = self.connections[author_id]
-        while True:
-            try:
-                data = await websocket.receive_json()
-                if on_message:
-                    await on_message(data)
-            except (WebSocketDisconnect, RuntimeError) as e:
-                logging.error(f"Error when try to listen websocat {author_id}: {e}")
-                await self.disconnect(author_id)
-
-    async def disconnect(self, author_id: int):
-        await self.connections[author_id].close()
-        async with self.lock:
-            if author_id in self.connections:
-                del self.connections[author_id]
-
+        self.connections[author_id] = list(
+            filter(lambda ws: ws.client_state == WebSocketState.CONNECTED, self.connections[author_id])
+        )
+    
+    def is_author_connected(self, author_id: int) -> bool:
+        if author_id not in self.connections:
+            return False
+        if list(
+            filter(lambda ws: ws.client_state == WebSocketState.CONNECTED, self.connections[author_id])
+        ):
+            return True
+        return False
+    
     async def send_to_author(self, author_id: int, data: dict):
         if author_id not in self.connections:
-            logging.error("Author not in connections")
-            return
-        try:
-            await self.connections[author_id].send_json(data)
-        except WebSocketDisconnect:
-            await self.disconnect(author_id)
-            raise WebSocketDisconnect
-        
+            logging.error(f"Author not in connections list")
 
-ws_manager = WebSocketManager()
+    async def listen(self, auth)
+
+
+ws_manager = WSManager()
