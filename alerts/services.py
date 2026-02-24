@@ -74,3 +74,14 @@ def decode_custom_jwt(token: str) -> WidgetTokenInfo:
     payload = jwt.decode(token, secret_key, algorithms=[algorithm])
 
     return WidgetTokenInfo(**payload)
+
+
+async def check_widget_token(token_info: WidgetTokenInfo) -> bool:
+    conn = get_redis_conn()
+    
+    cache_key = f"streamer:{token_info.author_id}:widget_control"
+    control_uuid = (await conn.get(cache_key)).decode()
+
+    if control_uuid is None or control_uuid != token_info.control_uuid:
+        return False
+    return True
