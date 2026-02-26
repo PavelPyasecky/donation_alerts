@@ -23,10 +23,8 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
 
     await ws_manager.connect(widget_token_info.author_id, websocket)
     exchange = await rabbitmq_consumer.create_listener(widget_token_info.author_id)
-    asyncio.create_task(
-        ws_manager.listen(
-            widget_token_info.author_id,
-            websocket,
-            get_ws_messages_handler(widget_token_info.author_id, exchange),
-        )
+    await ws_manager.listen(
+        widget_token_info.author_id,
+        websocket,
+        get_ws_messages_handler(widget_token_info.author_id, exchange),
     )
