@@ -6,9 +6,9 @@ import logging
 
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange, AbstractQueue
-from fastapi import WebSocketDisconnect
+from fastapi import WebSocketDisconnect, WebSocketException, status
 
-from alerts.websocket import WSManager, ws_manager
+from alerts.websocket import WSManager, ws_alerts_manager, ws_campaigns_manager
 from alerts.models import (
     Alert,
     AlertStatus,
@@ -23,16 +23,18 @@ from configs import config
 
 
 class ConsumerTasksManager:
-    def __init__(self, ws_manager: WSManager):
+    def __init__(self, ws_alerts_manager: WSManager, ws_campaigns_manager: WSManager):
         self.authors_tasks: dict[int, asyncio.Task] = {}
-        self.ws_manager = ws_manager
+        self.ws_alerts_manager = ws_alerts_manager
+        self.ws_campaigns_manager = ws_campaigns_manager
         self.lock = asyncio.Lock()
 
-    async def start_queue_iter(self, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
+    async def start_queue_iter(self, manager_type: str, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
+        ws_manager = self._get_current_manager(manager_type)
         async with self.lock:
             if author_id in self.authors_tasks:
                 self.authors_tasks[author_id].cancel()
-            task = asyncio.create_task(self._queue_iter(author_id, queue, exchange))
+            task = asyncio.create_task(self._queue_iter(ws_manager, author_id, queue, exchange))
             self.authors_tasks[author_id] = task
 
     async def remove_task(self, author_id: int):
@@ -40,26 +42,35 @@ class ConsumerTasksManager:
             if author_id in self.authors_tasks:
                 self.authors_tasks[author_id].cancel()
                 self.authors_tasks.pop(author_id)
+    
+    def _get_current_manager(self, manager_type: str) -> WSManager:
+        match manager_type:
+            case config.ALERTS_EXCHANGE:
+                return self.ws_alerts_manager
+            case config.CAMPAIGNS_EXCHANGE:
+                return self.ws_campaigns_manager
+            case _:
+                raise TypeError("Unknown WS manager type")
 
-    async def _queue_iter(self, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
+    async def _queue_iter(self, ws_manager: WSManager, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
                     data = json.loads(message.body.decode())
                     alert = Alert(**data)
-                    if not self.ws_manager.is_author_connected(author_id):
-                        await self.ws_manager.clear_disconnected(author_id)
+                    if not ws_manager.is_author_connected(author_id):
+                        await ws_manager.clear_disconnected(author_id)
                         await self.remove_task(author_id)
                         await message.nack()
                         return
-                    asyncio.create_task(send_alert_to_author_service(alert, exchange))
+                    asyncio.create_task(send_alert_to_author_service(ws_manager, alert, exchange))
 
 
-consumer_tasks_manager = ConsumerTasksManager(ws_manager)
+consumer_tasks_manager = ConsumerTasksManager(ws_alerts_manager, ws_campaigns_manager)
 
 
 async def send_alert_to_author_service(
-    alert: Alert, exchange: AbstractExchange, current_attemp: int = 1
+    ws_manager: WSManager, alert: Alert, exchange: AbstractExchange, current_attemp: int = 1
 ) -> AlertStatus:
     try:
         await ws_manager.broadcast(alert.author_id, alert.model_dump(mode="json"))
@@ -110,12 +121,17 @@ def decode_custom_jwt(token: str) -> WidgetTokenInfo:
     return WidgetTokenInfo(**payload)
 
 
-async def check_widget_token(token_info: WidgetTokenInfo) -> bool:
+async def check_widget_token(widget_token: str) -> WidgetTokenInfo:
+    try:
+        token_info = decode_custom_jwt(widget_token)
+    except jwt.InvalidTokenError as e:
+        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
+
     conn = get_redis_conn()
 
     cache_key = f"streamer:{token_info.author_id}:widget_control"
     control_uuid = (await conn.get(cache_key)).decode()
 
     if control_uuid is None or control_uuid != token_info.control_uuid:
-        return False
-    return True
+        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
+    return token_info

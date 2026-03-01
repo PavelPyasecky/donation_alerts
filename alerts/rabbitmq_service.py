@@ -21,21 +21,28 @@ class RabbitMQConsumer:
             await channel.close()
         await self.connection.close()
 
-    async def create_listener(self, author_id: int) -> AbstractExchange:
+    async def create_listener(
+        self, author_id: int, exchange_name: str, queue_prefix: str = "", status_queue: str = None
+    ) -> AbstractExchange:
         channel = await self.connection.channel()
         self.channels.append(channel)
 
-        exchange = await channel.declare_exchange(config.ALERTS_EXCHANGE, ExchangeType.DIRECT, durable=True)
-        queue = await channel.declare_queue(str(author_id), durable=True, exclusive=False, auto_delete=False)
-        statuses_queue = await channel.declare_queue(
-            config.ALERT_STATUS_QUEUE,
-            durable=True,
+        exchange = await channel.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
+        queue = await channel.declare_queue(
+            f"{queue_prefix}{author_id}", durable=True, exclusive=False, auto_delete=False
         )
 
-        await queue.bind(exchange, routing_key=str(author_id))
-        await statuses_queue.bind(exchange, routing_key=config.ALERT_STATUS_QUEUE)
+        await queue.bind(exchange, routing_key=f"{queue_prefix}{author_id}")
 
-        await consumer_tasks_manager.start_queue_iter(author_id, queue, exchange)
+        if status_queue:
+            statuses_queue = await channel.declare_queue(
+                status_queue,
+                durable=True,
+            )
+
+            await statuses_queue.bind(exchange, routing_key=config.ALERT_STATUS_QUEUE)
+
+        await consumer_tasks_manager.start_queue_iter(exchange_name, author_id, queue, exchange)
 
         return exchange
 
