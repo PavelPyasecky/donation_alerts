@@ -29,6 +29,8 @@ REDIS_HOST = getenv("REDIS_HOST")
 REDIS_PORT = getenv("REDIS_PORT")
 REDIS_DB = getenv("REDIS_DB")
 
+GRPC_SERVER_URL = getenv("GRPC_SERVER_URL")
+
 
 ALLOWED_HOSTS = [
     url.strip()

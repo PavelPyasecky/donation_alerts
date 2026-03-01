@@ -57,3 +57,15 @@ class WidgetStatus(BaseModel):
 class WidgetMessage(BaseModel):
     type_: MessageTypes = Field(alias="type")
     data: AlertStatus | WidgetStatus
+
+
+class Campaign(BaseModel):
+    id: int
+    title: str
+    description: str
+    target_amount: str
+    collected_amount: str
+    progress_percentage: float
+    is_active: bool
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
