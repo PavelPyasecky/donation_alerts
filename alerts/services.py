@@ -31,11 +31,10 @@ class ConsumerTasksManager:
         self.lock = asyncio.Lock()
 
     async def start_queue_iter(self, manager_type: str, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
-        ws_manager = self._get_current_manager(manager_type)
         async with self.lock:
             if author_id in self.authors_tasks:
                 self.authors_tasks[author_id].cancel()
-            task = asyncio.create_task(self._queue_iter(ws_manager, author_id, queue, exchange))
+            task = asyncio.create_task(self._queue_iter(manager_type, author_id, queue, exchange))
             self.authors_tasks[author_id] = task
 
     async def remove_task(self, author_id: int):
@@ -53,18 +52,29 @@ class ConsumerTasksManager:
             case _:
                 raise TypeError("Unknown WS manager type")
 
-    async def _queue_iter(self, ws_manager: WSManager, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
+    async def _queue_iter(self, manager_type: str, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
+        ws_manager = self._get_current_manager(manager_type)
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
                     data = json.loads(message.body.decode())
-                    alert = Alert(**data)
-                    if not ws_manager.is_author_connected(author_id):
-                        await ws_manager.clear_disconnected(author_id)
-                        await self.remove_task(author_id)
-                        await message.nack()
-                        return
-                    asyncio.create_task(send_alert_to_author_service(ws_manager, alert, exchange))
+                    match manager_type:
+                        case config.ALERTS_EXCHANGE:
+                            alert = Alert(**data)
+                            if not ws_manager.is_author_connected(author_id):
+                                await ws_manager.clear_disconnected(author_id)
+                                await self.remove_task(author_id)
+                                await message.nack()
+                                return
+                            asyncio.create_task(send_alert_to_author_service(ws_manager, alert, exchange))
+                        case config.CAMPAIGNS_EXCHANGE:
+                            campaign = Campaign(**data)
+                            if not ws_manager.is_author_connected(author_id):
+                                await ws_manager.clear_disconnected(author_id)
+                                await self.remove_task(author_id)
+                                await message.nack()
+                                return
+                            asyncio.create_task(send_campaign_to_author_service(ws_manager, campaign, exchange))
 
 
 consumer_tasks_manager = ConsumerTasksManager(ws_alerts_manager, ws_campaigns_manager)

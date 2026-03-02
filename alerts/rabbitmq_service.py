@@ -22,7 +22,7 @@ class RabbitMQConsumer:
         await self.connection.close()
 
     async def create_listener(
-        self, author_id: int, exchange_name: str, callback, queue_prefix: str = "", status_queue: str = None
+        self, author_id: int, exchange_name: str, queue_prefix: str = "", status_queue: str = None
     ) -> AbstractExchange:
         channel = await self.connection.channel()
         self.channels.append(channel)
