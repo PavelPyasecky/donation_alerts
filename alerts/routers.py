@@ -16,7 +16,7 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
 
     await ws_alerts_manager.connect(widget_token_info.author_id, websocket)
     exchange = await rabbitmq_consumer.create_listener(
-        widget_token_info.author_id, config.ALERTS_EXCHANGE, send_alert_to_author_service, status_queue=config.ALERT_STATUS_QUEUE
+        widget_token_info.author_id, config.ALERTS_EXCHANGE, status_queue=config.ALERT_STATUS_QUEUE
     )
     await ws_alerts_manager.listen(
         widget_token_info.author_id,
