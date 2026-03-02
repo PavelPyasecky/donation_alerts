@@ -61,6 +61,7 @@ class WidgetMessage(BaseModel):
 
 class Campaign(BaseModel):
     id: int
+    author_id: int
     title: str
     description: str
     target_amount: str

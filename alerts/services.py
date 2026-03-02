@@ -12,6 +12,7 @@ from alerts.websocket import WSManager, ws_alerts_manager, ws_campaigns_manager
 from alerts.models import (
     Alert,
     AlertStatus,
+    Campaign,
     MessageTypes,
     RabbitMQAlertStatus,
     Statuses,
@@ -83,7 +84,6 @@ async def send_alert_to_author_service(
             status = AlertStatus(
                 alert_id=alert.alert_id,
                 status=Statuses.error,
-                external_id=f"fastapi_alert_{alert.alert_id}",
                 delivered_at=datetime.datetime.now(),
             )
 
@@ -91,6 +91,20 @@ async def send_alert_to_author_service(
                 message=Message(body=status.model_dump_json().encode()),
                 routing_key=config.ALERT_STATUS_QUEUE,
             )
+
+
+async def send_campaign_to_author_service(
+    ws_manager: WSManager, campaign: Campaign, exchange: AbstractExchange, current_attemp: int = 1
+) -> AlertStatus:
+    try:
+        await ws_manager.broadcast(campaign.author_id, campaign.model_dump(mode="json"))
+    except WebSocketDisconnect as e:
+        logging.error(f"Error when sending campaign {campaign.id} to author {campaign.author_id}: {e}")
+        await asyncio.sleep(20)
+        if current_attemp < 2:
+            return await send_alert_to_author_service(ws_manager, campaign, exchange, current_attemp + 1)
+        else:
+            logging.error(f"Sending campaign {campaign.id} to author {campaign.author_id} failed")
 
 
 def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
@@ -130,7 +144,11 @@ async def check_widget_token(widget_token: str) -> WidgetTokenInfo:
     conn = get_redis_conn()
 
     cache_key = f"streamer:{token_info.author_id}:widget_control"
-    control_uuid = (await conn.get(cache_key)).decode()
+    value = await conn.get(cache_key)
+    if value is None:
+        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
+
+    control_uuid = value.decode()
 
     if control_uuid is None or control_uuid != token_info.control_uuid:
         raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
