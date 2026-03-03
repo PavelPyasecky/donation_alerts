@@ -156,10 +156,12 @@ async def check_widget_token(widget_token: str) -> WidgetTokenInfo:
     cache_key = f"streamer:{token_info.author_id}:widget_control"
     value = await conn.get(cache_key)
     if value is None:
+        logging.warning(f"Widget control uuid for author {token_info.author_id} not exists")
         raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
 
     control_uuid = value.decode()
 
     if control_uuid is None or control_uuid != token_info.control_uuid:
+        logging.warning(f"Widget control uuid for author {token_info.author_id} incorrect")
         raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
     return token_info
