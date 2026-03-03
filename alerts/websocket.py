@@ -82,7 +82,7 @@ class WSManager:
             logging.error(f"Unknown exception when received message {e}", exc_info=True)
         finally:
             await self.disconnect(author_id, websocket)
-            raise WebSocketException(status.WS_1002_PROTOCOL_ERROR, "incorrect message")
 
 
-ws_manager = WSManager()
+ws_alerts_manager = WSManager()
+ws_campaigns_manager = WSManager()
