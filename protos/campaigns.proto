@@ -14,8 +14,12 @@ message Campaign {
   string collected_amount = 5;
   float progress_percentage = 6;
   bool is_active = 7;
-  string created_at = 8;
-  string updated_at = 9;
+  bool is_default = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string start_at = 11;
+  string end_at = 12;
+  bool is_active_now = 13;
 }
 
 message GetByAuthorIDRequest {
