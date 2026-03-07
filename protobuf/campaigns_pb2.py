@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x63\x61mpaigns.proto\x12\x08\x63\x61mpaign\"\xc3\x01\n\x08\x43\x61mpaign\x12\n\n\x02id\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x15\n\rtarget_amount\x18\x04 \x01(\t\x12\x18\n\x10\x63ollected_amount\x18\x05 \x01(\t\x12\x1b\n\x13progress_percentage\x18\x06 \x01(\x02\x12\x11\n\tis_active\x18\x07 \x01(\x08\x12\x12\n\ncreated_at\x18\x08 \x01(\t\x12\x12\n\nupdated_at\x18\t \x01(\t\")\n\x14GetByAuthorIDRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x32X\n\x0f\x43\x61mpaignService\x12\x45\n\rGetByAuthorID\x12\x1e.campaign.GetByAuthorIDRequest\x1a\x12.campaign.Campaign\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x63\x61mpaigns.proto\x12\x08\x63\x61mpaign\"\x90\x02\n\x08\x43\x61mpaign\x12\n\n\x02id\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x15\n\rtarget_amount\x18\x04 \x01(\t\x12\x18\n\x10\x63ollected_amount\x18\x05 \x01(\t\x12\x1b\n\x13progress_percentage\x18\x06 \x01(\x02\x12\x11\n\tis_active\x18\x07 \x01(\x08\x12\x12\n\nis_default\x18\x08 \x01(\x08\x12\x12\n\ncreated_at\x18\t \x01(\t\x12\x12\n\nupdated_at\x18\n \x01(\t\x12\x10\n\x08start_at\x18\x0b \x01(\t\x12\x0e\n\x06\x65nd_at\x18\x0c \x01(\t\x12\x15\n\ris_active_now\x18\r \x01(\x08\")\n\x14GetByAuthorIDRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x32X\n\x0f\x43\x61mpaignService\x12\x45\n\rGetByAuthorID\x12\x1e.campaign.GetByAuthorIDRequest\x1a\x12.campaign.Campaign\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,9 +32,9 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'campaigns_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_CAMPAIGN']._serialized_start=30
-  _globals['_CAMPAIGN']._serialized_end=225
-  _globals['_GETBYAUTHORIDREQUEST']._serialized_start=227
-  _globals['_GETBYAUTHORIDREQUEST']._serialized_end=268
-  _globals['_CAMPAIGNSERVICE']._serialized_start=270
-  _globals['_CAMPAIGNSERVICE']._serialized_end=358
+  _globals['_CAMPAIGN']._serialized_end=302
+  _globals['_GETBYAUTHORIDREQUEST']._serialized_start=304
+  _globals['_GETBYAUTHORIDREQUEST']._serialized_end=345
+  _globals['_CAMPAIGNSERVICE']._serialized_start=347
+  _globals['_CAMPAIGNSERVICE']._serialized_end=435
 # @@protoc_insertion_point(module_scope)

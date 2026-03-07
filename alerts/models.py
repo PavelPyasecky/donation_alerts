@@ -68,5 +68,9 @@ class Campaign(BaseModel):
     collected_amount: str
     progress_percentage: float
     is_active: bool
+    is_default: bool
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    start_at: datetime.datetime
+    end_at: datetime.datetime
+    is_active_now: bool = Field(False)
