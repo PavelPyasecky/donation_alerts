@@ -57,7 +57,10 @@ class ConsumerTasksManager:
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
-                    data = json.loads(message.body.decode())
+                    try:
+                        data = json.loads(message.body.decode())
+                    except Exception as e:
+                        logging.error(f"Error when get message from rabbitmq: {e}")
                     match manager_type:
                         case config.ALERTS_EXCHANGE:
                             alert = Alert(**data)
