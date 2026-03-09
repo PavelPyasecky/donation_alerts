@@ -29,7 +29,7 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
 async def websocket_campaigns_endpoint(websocket: WebSocket, campaign_id: int, widget_token: str):
     widget_token_info = await check_widget_token(widget_token)
     campaign = await campaign_grpc_client.get_campaign_by_id_author_id(widget_token_info.author_id, campaign_id)
-    if not campaign:
+    if not campaign or campaign.author_id != widget_token_info.author_id:
         raise WebSocketException(status.WS_1003_UNSUPPORTED_DATA, "Campaign is not exists")
 
     await ws_campaigns_manager.connect(campaign_id, websocket)
