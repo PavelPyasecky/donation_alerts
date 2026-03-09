@@ -61,6 +61,7 @@ class ConsumerTasksManager:
                         data = json.loads(message.body.decode())
                     except Exception as e:
                         logging.error(f"Error when get message from rabbitmq: {e}")
+                        continue
                     match manager_type:
                         case config.ALERTS_EXCHANGE:
                             alert = Alert(**data)
@@ -110,7 +111,7 @@ async def send_campaign_to_author_service(
     ws_manager: WSManager, campaign: Campaign, exchange: AbstractExchange, current_attemp: int = 1
 ) -> AlertStatus:
     try:
-        await ws_manager.broadcast(campaign.author_id, campaign.model_dump(mode="json"))
+        await ws_manager.broadcast(campaign.id, campaign.model_dump(mode="json"))
     except WebSocketDisconnect as e:
         logging.error(f"Error when sending campaign {campaign.id} to author {campaign.author_id}: {e}")
         await asyncio.sleep(20)
