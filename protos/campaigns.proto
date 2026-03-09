@@ -3,7 +3,8 @@ syntax = "proto3";
 package campaign;
 
 service CampaignService {
-  rpc GetByAuthorID(GetByAuthorIDRequest) returns (Campaign) {}
+  rpc GetByIDAuthorID(GetByIDAuthorIDRequest) returns (Campaign) {}
+  rpc ListByAuthorID(GetByAuthorIDRequest) returns (CampaignList) {}
 }
 
 message Campaign {
@@ -22,6 +23,15 @@ message Campaign {
   bool is_active_now = 13;
 }
 
+message CampaignList {
+  repeated Campaign campaigns = 1;
+}
+
 message GetByAuthorIDRequest {
   int64 author_id = 1;
+}
+
+message GetByIDAuthorIDRequest {
+  int64 author_id = 1;
+  int64 campaign_id = 2;
 }

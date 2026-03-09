@@ -34,17 +34,28 @@ class CampaignServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GetByAuthorID = channel.unary_unary(
-                '/campaign.CampaignService/GetByAuthorID',
-                request_serializer=campaigns__pb2.GetByAuthorIDRequest.SerializeToString,
+        self.GetByIDAuthorID = channel.unary_unary(
+                '/campaign.CampaignService/GetByIDAuthorID',
+                request_serializer=campaigns__pb2.GetByIDAuthorIDRequest.SerializeToString,
                 response_deserializer=campaigns__pb2.Campaign.FromString,
+                _registered_method=True)
+        self.ListByAuthorID = channel.unary_unary(
+                '/campaign.CampaignService/ListByAuthorID',
+                request_serializer=campaigns__pb2.GetByAuthorIDRequest.SerializeToString,
+                response_deserializer=campaigns__pb2.CampaignList.FromString,
                 _registered_method=True)
 
 
 class CampaignServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def GetByAuthorID(self, request, context):
+    def GetByIDAuthorID(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListByAuthorID(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +64,15 @@ class CampaignServiceServicer(object):
 
 def add_CampaignServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'GetByAuthorID': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetByAuthorID,
-                    request_deserializer=campaigns__pb2.GetByAuthorIDRequest.FromString,
+            'GetByIDAuthorID': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetByIDAuthorID,
+                    request_deserializer=campaigns__pb2.GetByIDAuthorIDRequest.FromString,
                     response_serializer=campaigns__pb2.Campaign.SerializeToString,
+            ),
+            'ListByAuthorID': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListByAuthorID,
+                    request_deserializer=campaigns__pb2.GetByAuthorIDRequest.FromString,
+                    response_serializer=campaigns__pb2.CampaignList.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +86,7 @@ class CampaignService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def GetByAuthorID(request,
+    def GetByIDAuthorID(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +99,36 @@ class CampaignService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/campaign.CampaignService/GetByAuthorID',
-            campaigns__pb2.GetByAuthorIDRequest.SerializeToString,
+            '/campaign.CampaignService/GetByIDAuthorID',
+            campaigns__pb2.GetByIDAuthorIDRequest.SerializeToString,
             campaigns__pb2.Campaign.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListByAuthorID(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/campaign.CampaignService/ListByAuthorID',
+            campaigns__pb2.GetByAuthorIDRequest.SerializeToString,
+            campaigns__pb2.CampaignList.FromString,
             options,
             channel_credentials,
             insecure,

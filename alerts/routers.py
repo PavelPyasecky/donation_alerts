@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, WebSocket, WebSocketException, status
 
 from alerts.rabbitmq_service import rabbitmq_consumer
 from alerts.services import check_widget_token, get_ws_messages_handler, send_alert_to_author_service
@@ -25,16 +25,14 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str):
     )
 
 
-@router.websocket("/ws/campaigns/{widget_token}")
-async def websocket_campaigns_endpoint(websocket: WebSocket, widget_token: str):
+@router.websocket("/ws/campaigns/{campaign_id}/{widget_token}")
+async def websocket_campaigns_endpoint(websocket: WebSocket, campaign_id: int, widget_token: str):
     widget_token_info = await check_widget_token(widget_token)
+    campaign = await campaign_grpc_client.get_campaign_by_id_author_id(widget_token_info.author_id, campaign_id)
+    if not campaign or campaign.author_id != widget_token_info.author_id:
+        raise WebSocketException(status.WS_1003_UNSUPPORTED_DATA, "Campaign is not exists")
 
-    await ws_campaigns_manager.connect(widget_token_info.author_id, websocket)
-    exchange = await rabbitmq_consumer.create_listener(
-        widget_token_info.author_id, config.CAMPAIGNS_EXCHANGE, "campaigns_"
-    )
-    campaign = await campaign_grpc_client.get_campaign_by_author_id(widget_token_info.author_id)
-    await ws_campaigns_manager.broadcast(
-        widget_token_info.author_id, campaign.model_dump(mode="json") if campaign else {}
-    )
-    await ws_campaigns_manager.listen(widget_token_info.author_id, websocket)
+    await ws_campaigns_manager.connect(campaign_id, websocket)
+    exchange = await rabbitmq_consumer.create_listener(campaign_id, config.CAMPAIGNS_EXCHANGE, "campaigns_")
+    await ws_campaigns_manager.broadcast(campaign_id, campaign.model_dump(mode="json"))
+    await ws_campaigns_manager.listen(campaign_id, websocket)

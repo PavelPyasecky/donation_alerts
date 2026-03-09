@@ -19,5 +19,6 @@ def handle_grpc_errors(func):
                     raise RuntimeError(f"gRPC call failed: {details}")
         except Exception as e:
             logging.error(f"Unexpected error in gRPC client: {e}", exc_info=True)
+            raise e
 
     return wrapper
