@@ -15,6 +15,8 @@ def handle_grpc_errors(func):
                     return None
                 case grpc.StatusCode.INVALID_ARGUMENT:
                     raise ValueError(f"Invalid gRPC request: {details}")
+                case grpc.StatusCode.PERMISSION_DENIED:
+                    raise PermissionError(f"gRPC call permission denied: {details}")
                 case _:
                     raise RuntimeError(f"gRPC call failed: {details}")
         except Exception as e:
