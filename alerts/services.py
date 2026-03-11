@@ -62,23 +62,27 @@ class ConsumerTasksManager:
                     except Exception as e:
                         logging.error(f"Error when get message from rabbitmq: {e}")
                         continue
-                    match manager_type:
-                        case config.ALERTS_EXCHANGE:
-                            alert = Alert(**data)
-                            if not ws_manager.is_author_connected(author_id):
-                                await ws_manager.clear_disconnected(author_id)
-                                await self.remove_task(author_id)
-                                await message.nack()
-                                return
-                            asyncio.create_task(send_alert_to_author_service(ws_manager, alert, exchange))
-                        case config.CAMPAIGNS_EXCHANGE:
-                            campaign = Campaign(**data)
-                            if not ws_manager.is_author_connected(author_id):
-                                await ws_manager.clear_disconnected(author_id)
-                                await self.remove_task(author_id)
-                                await message.nack()
-                                return
-                            asyncio.create_task(send_campaign_to_author_service(ws_manager, campaign, exchange))
+                    try:
+                        match manager_type:
+                            case config.ALERTS_EXCHANGE:
+                                alert = Alert(**data)
+                                if not ws_manager.is_author_connected(author_id):
+                                    await ws_manager.clear_disconnected(author_id)
+                                    await self.remove_task(author_id)
+                                    await message.nack()
+                                    return
+                                asyncio.create_task(send_alert_to_author_service(ws_manager, alert, exchange))
+                            case config.CAMPAIGNS_EXCHANGE:
+                                campaign = Campaign(**data)
+                                if not ws_manager.is_author_connected(author_id):
+                                    await ws_manager.clear_disconnected(author_id)
+                                    await self.remove_task(author_id)
+                                    await message.nack()
+                                    return
+                                asyncio.create_task(send_campaign_to_author_service(ws_manager, campaign, exchange))
+                    except Exception as e:
+                        logging.error(f"Error when process message from rabbitmq: {e}")
+                        continue
 
 
 consumer_tasks_manager = ConsumerTasksManager(ws_alerts_manager, ws_campaigns_manager)
