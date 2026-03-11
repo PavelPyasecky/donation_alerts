@@ -1,5 +1,5 @@
 {$DOMAIN}, http://{$PUBLIC_IP} {
-    handle_path /api* {
+    handle_path /ws* {
         reverse_proxy api:8000
     }
 
