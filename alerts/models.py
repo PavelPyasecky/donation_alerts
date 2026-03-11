@@ -20,7 +20,7 @@ class Alert(BaseModel):
     video_url: str
     sound_url: str
     alert_settings: AlertSettings
-    donation_id: int
+    donation_id: int | None = Field(None)
     timestamp: datetime.datetime
 
 
