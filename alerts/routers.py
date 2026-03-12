@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketException, status
 
 from alerts.rabbitmq_service import rabbitmq_consumer
-from alerts.services import check_widget_token, get_ws_messages_handler, send_alert_to_author_service
+from alerts.services import check_widget_token, get_ws_messages_handler
 from alerts.websocket import ws_alerts_manager, ws_campaigns_manager
 from configs import config
 from alerts.grpc import campaign_grpc_client

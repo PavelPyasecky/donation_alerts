@@ -12,7 +12,7 @@ class AlertSettings(BaseModel):
 
 
 class Alert(BaseModel):
-    alert_id: int
+    id: int
     author_id: int
     amount: float
     message: str
@@ -74,3 +74,19 @@ class Campaign(BaseModel):
     start_at: datetime.datetime
     end_at: datetime.datetime
     is_active_now: bool = Field(False)
+
+
+class RabbitMessageTypes(Enum):
+    event = "event"
+    update = "update"
+
+
+class SkipAlert(BaseModel):
+    author_id: int
+    donation_id: int
+
+
+class RabbitMessage(BaseModel):
+    type_: RabbitMessageTypes = Field(alias="type")
+    action: str
+    data: Alert | Campaign | SkipAlert
