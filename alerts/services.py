@@ -63,7 +63,7 @@ class ConsumerTasksManager:
                         logging.error(f"Error when get message from rabbitmq: {e}")
                         continue
                     try:
-                        message = RabbitMessage(**data)
+                        message_model = RabbitMessage(**data)
                         match manager_type:
                             case config.ALERTS_EXCHANGE:
                                 if not ws_manager.is_author_connected(author_id):
@@ -71,14 +71,14 @@ class ConsumerTasksManager:
                                     await self.remove_task(author_id)
                                     await message.nack()
                                     return
-                                asyncio.create_task(send_message_to_author_service(ws_manager, message, exchange))
+                                asyncio.create_task(send_message_to_author_service(ws_manager, message_model.data.author_id, message_model, exchange))
                             case config.CAMPAIGNS_EXCHANGE:
                                 if not ws_manager.is_author_connected(author_id):
                                     await ws_manager.clear_disconnected(author_id)
                                     await self.remove_task(author_id)
                                     await message.nack()
                                     return
-                                asyncio.create_task(send_message_to_author_service(ws_manager, message, exchange))
+                                asyncio.create_task(send_message_to_author_service(ws_manager, message_model.data.id, message_model, exchange))
                     except Exception as e:
                         logging.error(f"Error when process message from rabbitmq: {e}")
                         continue
@@ -88,15 +88,15 @@ consumer_tasks_manager = ConsumerTasksManager(ws_alerts_manager, ws_campaigns_ma
 
 
 async def send_message_to_author_service(
-    ws_manager: WSManager, message: RabbitMessage, exchange: AbstractExchange, current_attemp: int = 1
+    ws_manager: WSManager, id_: int, message: RabbitMessage, exchange: AbstractExchange, current_attemp: int = 1
 ) -> AlertStatus:
     try:
-        await ws_manager.broadcast(message.data.author_id, message.model_dump(mode="json", by_alias=True))
+        await ws_manager.broadcast(id_, message.model_dump(mode="json", by_alias=True))
     except WebSocketDisconnect as e:
-        logging.error(f"Error when sending alert {message.data.alert_id}: {e}")
+        logging.error(f"Error when sending alert {id_}: {e}")
         await asyncio.sleep(20)
         if current_attemp < 2:
-            return await send_message_to_author_service(message, exchange, current_attemp + 1)
+            return await send_message_to_author_service(ws_manager, id_, message, exchange, current_attemp + 1)
         else:
             if isinstance(message.data, Alert):
                 status = AlertStatus(
