@@ -4,6 +4,9 @@ import logging
 from fastapi import WebSocketException, status
 from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
+from alerts.grpc import alert_settings_grpc_client
+from alerts.models import RabbitMessage, RabbitMessageTypes
+
 
 class WSManager:
     def __init__(self):
@@ -82,6 +85,22 @@ class WSManager:
             logging.error(f"Unknown exception when received message {e}", exc_info=True)
         finally:
             await self.disconnect(author_id, websocket)
+    
+    async def start_schedule_task(self, interval_seconds: int, action: callable, **kwargs):
+        return asyncio.create_task(action(interval_seconds=interval_seconds, **kwargs))
+    
+    async def _get_and_send_alert_settings(self, interval_seconds: int, **kwargs):
+        author_id = kwargs.get("author_id")
+        group_id = kwargs.get("group_id")
+        while True:
+            if not self.is_author_connected(author_id):
+                break
+
+            alerts_settings = await alert_settings_grpc_client.get_alert_settings_list_by_author_id(author_id, group_id)
+            message = RabbitMessage(type=RabbitMessageTypes.update, action="alert_settings", data=alerts_settings)
+
+            await self.broadcast(author_id, message.model_dump(mode="json", by_alias=True))
+            await asyncio.sleep(interval_seconds)
 
 
 ws_alerts_manager = WSManager()
