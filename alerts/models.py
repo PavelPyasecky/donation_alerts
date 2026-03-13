@@ -12,7 +12,7 @@ class PageSettings(BaseModel):
 
 
 class Alert(BaseModel):
-    alert_id: int
+    id: int
     author_id: int
     amount: float
     message: str
@@ -63,7 +63,7 @@ class Campaign(BaseModel):
     id: int
     author_id: int
     title: str
-    description: str
+    description: str = Field("")
     target_amount: str
     collected_amount: str
     progress_percentage: float
