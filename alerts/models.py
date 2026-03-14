@@ -8,7 +8,8 @@ class PageSettings(BaseModel):
     max_message_length: int
     font_size: int
     min_amount: float
-    enable_alerts: bool
+    allow_message: bool
+    video_min_amount: str
 
 
 class Alert(BaseModel):
