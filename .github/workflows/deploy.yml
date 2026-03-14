@@ -1,94 +1,54 @@
-name: Deploy Main
+name: Publish Image
 
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
 
-concurrency:
-  group: production-deployment
-  cancel-in-progress: false
+permissions:
+  contents: read
 
-env:
-  DEPLOY_PATH: /root/donation_alerts
-  REPO_URL: git@github.com:${{ github.repository }}.git
-  SERVICE_NAME: donation-alerts
-  HEALTHCHECK_URL: ""
-  DOCKER_COMPOSE_FILE: docker-compose.yml
+concurrency:
+  group: image-publish-main
+  cancel-in-progress: true
 
 jobs:
-  deploy-production:
+  publish:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    env:
+      REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
+      IMAGE_NAME: ${{ vars.CONTAINER_IMAGE_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH Agent
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate registry settings
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          ssh-keyscan -H "$PROD_VPS_HOST" >> ~/.ssh/known_hosts
-          eval $(ssh-agent -s)
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
-          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+          test -n "$REGISTRY" || (echo "vars.CONTAINER_REGISTRY is required" && exit 1)
+          test -n "$IMAGE_NAME" || (echo "vars.CONTAINER_IMAGE_NAME is required" && exit 1)
+          test -n "${{ secrets.CONTAINER_REGISTRY_USERNAME }}" || (echo "secrets.CONTAINER_REGISTRY_USERNAME is required" && exit 1)
+          test -n "${{ secrets.CONTAINER_REGISTRY_PASSWORD }}" || (echo "secrets.CONTAINER_REGISTRY_PASSWORD is required" && exit 1)
 
-      - name: Deploy to VPS
-        env:
-          PROD_VPS_USER: ${{ secrets.PROD_VPS_USER }}
-          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
-          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
-          COMMIT_SHA: ${{ github.sha }}
-        run: |
-          ENV_CONTENT=$(echo "$PROD_ENV_FILE" | base64 | tr -d '\n')
-          SHORT_SHA=$(echo $COMMIT_SHA | cut -c1-8)
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
 
-          ssh -A -o StrictHostKeyChecking=no $PROD_VPS_USER@$PROD_VPS_HOST << EOF
-            set -e
-
-            if [ -z "$DEPLOY_PATH" ] || [ "$DEPLOY_PATH" = "/" ]; then
-              echo "Error: Invalid DEPLOY_PATH"
-              exit 1
-            fi
-
-            mkdir -p $DEPLOY_PATH
-            cd $DEPLOY_PATH
-
-            mkdir -p ~/.ssh
-            ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
-
-            if [ ! -d ".git" ]; then
-              git init
-              git remote add origin $REPO_URL
-            fi
-
-            git remote set-url origin $REPO_URL
-            git fetch --all --prune
-
-            git reset --hard $COMMIT_SHA
-            git clean -fdx
-
-            echo "$ENV_CONTENT" | base64 -d > .env
-            echo "VERSION=$SHORT_SHA" >> .env
-
-            if ! command -v uv >/dev/null 2>&1; then
-              python3 -m pip install --user --upgrade uv
-              export PATH="\$HOME/.local/bin:\$PATH"
-            fi
-
-            uv python install 3.14
-            uv sync --frozen --python 3.14
-
-            if command -v docker >/dev/null 2>&1; then
-              export COMPOSE_PARALLEL_LIMIT=1
-              docker compose -f $DOCKER_COMPOSE_FILE up -d --build
-            else
-              echo "Warning: docker not installed on host; skipping compose up."
-            fi
-            
-          EOF
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

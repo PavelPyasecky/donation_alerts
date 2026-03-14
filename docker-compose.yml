@@ -15,11 +15,14 @@ services:
       - rabbitmq
 
   api:
-    build: .
+    image: ${APP_IMAGE:-donation-alerts:latest}
+    pull_policy: always
     ports:
       - "8000:8000"
     env_file:
       - .env
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -36,6 +39,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    restart: unless-stopped
+    command: --interval 15 --cleanup --rolling-restart --label-enable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   caddy_data:
