@@ -43,9 +43,11 @@ services:
   watchtower:
     image: containrrr/watchtower:1.7.1
     restart: unless-stopped
-    command: --interval 15 --cleanup --rolling-restart --label-enable
+    command: --interval 30 --cleanup --rolling-restart --label-enable
     environment:
-    - DOCKER_API_VERSION=${DOCKER_API_VERSION}
+      - DOCKER_API_VERSION=${DOCKER_API_VERSION}
+      - REPO_USER=${CONTAINER_REGISTRY_USERNAME}
+      - REPO_PASS=${CONTAINER_REGISTRY_PASSWORD}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
