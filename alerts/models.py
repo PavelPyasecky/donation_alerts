@@ -4,11 +4,12 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class AlertSettings(BaseModel):
+class PageSettings(BaseModel):
     max_message_length: int
     font_size: int
     min_amount: float
-    enable_alerts: bool
+    allow_message: bool
+    video_min_amount: str
 
 
 class Alert(BaseModel):
@@ -19,7 +20,7 @@ class Alert(BaseModel):
     donor_name: str
     video_url: str
     sound_url: str
-    alert_settings: AlertSettings
+    alert_settings: PageSettings
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
 
@@ -89,4 +90,55 @@ class SkipAlert(BaseModel):
 class RabbitMessage(BaseModel):
     type_: RabbitMessageTypes = Field(alias="type")
     action: str
-    data: Alert | Campaign | SkipAlert
+    data: Alert | Campaign | SkipAlert | list["AlertSetting"]
+
+
+class AlertSetting(BaseModel):
+    id: int
+    is_active: bool = Field(False)
+    type_: str = Field(alias="type")
+
+    activation_type: str
+    activation_amount: str
+    sound_duration: int
+    message_duration: int
+    appear_effect: str
+    disappear_effect: str
+    image_position: str
+
+    header_template: str
+    header_font: str
+    header_main_color: str
+    header_additional_color: str
+    header_font_size: int
+    header_animation_type: str
+    header_animation_objects: str
+    header_animate_all_words: bool = Field(False)
+    header_shadow_size: int
+    header_contour_color: str
+    header_enable_contour: bool = Field(False)
+
+    body_template: str
+    body_font: str
+    body_main_color: str
+    body_font_size: int
+    body_shadow_size: int
+    body_contour_color: str
+    body_enable_contour: bool = Field(False)
+    body_max_message_length: int
+
+    content_type: str
+    content: str | None = Field(None)
+    content_animation_type: str
+
+    music_file: str | None = Field(None)
+    music_volume: int
+
+    speech_synthesis_is_enabled: bool | None = Field(None)
+    speech_synthesis_min_amount: str | None = Field(None)
+    speech_synthesis_volume: int | None = Field(None)
+    speech_synthesis_start_type: str | None = Field(None)
+    speech_synthesis_voice: int | None = Field(None)
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime

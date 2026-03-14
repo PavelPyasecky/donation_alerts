@@ -8,6 +8,7 @@ from aio_pika import Message
 from aio_pika.abc import AbstractExchange, AbstractQueue
 from fastapi import WebSocketDisconnect, WebSocketException, status
 
+from alerts.grpc import alert_settings_grpc_client
 from alerts.websocket import WSManager, ws_alerts_manager, ws_campaigns_manager
 from alerts.models import (
     Alert,
@@ -128,6 +129,10 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
                     await redis_conn.setex(f"streamer:{author_id}:online", 60, 1)
 
     return wrapper
+
+
+async def get_and_send_alert_settings(author_id: int, group_id: int):
+    alert_settings_grpc_client.get
 
 
 def decode_custom_jwt(token: str) -> WidgetTokenInfo:
