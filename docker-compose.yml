@@ -44,6 +44,8 @@ services:
     image: containrrr/watchtower:1.7.1
     restart: unless-stopped
     command: --interval 5 --cleanup --rolling-restart --label-enable
+    environment:
+    - DOCKER_API_VERSION=${DOCKER_API_VERSION}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
