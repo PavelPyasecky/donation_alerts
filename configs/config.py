@@ -19,4 +19,28 @@ def getenv(name: str) -> str:
 # RABITMQ
 RMQ_URL = getenv("RMQ_URL")
 ALERTS_EXCHANGE = getenv("ALERTS_EXCHANGE")
+CAMPAIGNS_EXCHANGE = getenv("CAMPAIGNS_EXCHANGE")
 ALERT_STATUS_QUEUE = getenv("ALERT_STATUS_QUEUE")
+WIDGET_TOKEN_SECRET = getenv("WIDGET_TOKEN_SECRET")
+
+REDIS_USER = os.getenv("REDIS_USER")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+REDIS_HOST = getenv("REDIS_HOST")
+REDIS_PORT = getenv("REDIS_PORT")
+REDIS_DB = getenv("REDIS_DB")
+
+GRPC_SERVER_URL = getenv("GRPC_SERVER_URL")
+
+
+ALLOWED_HOSTS = [
+    url.strip()
+    for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if url.strip()
+]
+
+
+CORS_ALLOWED_ORIGINS = [
+    url.strip()
+    for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if url.strip()
+]

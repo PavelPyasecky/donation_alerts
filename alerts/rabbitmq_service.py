@@ -1,55 +1,48 @@
 import asyncio
-import json
 
 from asyncio import AbstractEventLoop
 from aio_pika import connect_robust
-from aio_pika.abc import AbstractExchange, AbstractChannel, AbstractQueue, AbstractRobustConnection, ExchangeType
+from aio_pika.abc import AbstractExchange, AbstractChannel, AbstractRobustConnection, ExchangeType
 
-from alerts.services import send_alert_to_author_service
+from alerts.services import consumer_tasks_manager
 from configs import config
-from alerts.models import Alert
 
 
 class RabbitMQConsumer:
     def __init__(self):
         self.channels: list[AbstractChannel] = []
+        self.author_iters: dict[int, asyncio.Task] = {}
 
     async def connect(self, url: str, loop: AbstractEventLoop):
-        self.connection: AbstractRobustConnection = (
-            await connect_robust(url, loop=loop)
-        )
+        self.connection: AbstractRobustConnection = await connect_robust(url, loop=loop)
 
     async def close(self):
         for channel in self.channels:
             await channel.close()
         await self.connection.close()
 
-    async def queue_iter(self, queue: AbstractQueue, exchange: AbstractExchange):
-        async with queue.iterator() as queue_iter:
-            async for message in queue_iter:
-                async with message.process():
-                    data = json.loads(message.body.decode())
-                    alert = Alert(**data)
-                    asyncio.create_task(send_alert_to_author_service(alert, exchange))
-                    
-    async def create_listener(self, author_id: int) -> AbstractExchange:
+    async def create_listener(
+        self, author_id: int, exchange_name: str, queue_prefix: str = "", status_queue: str = None
+    ) -> AbstractExchange:
         channel = await self.connection.channel()
         self.channels.append(channel)
 
-        exchange = await channel.declare_exchange(
-            config.ALERTS_EXCHANGE, ExchangeType.DIRECT, durable=True
-        )
+        exchange = await channel.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
         queue = await channel.declare_queue(
-            str(author_id), durable=True, exclusive=False, auto_delete=False
-        )
-        statuses_queue = await channel.declare_queue(
-            config.ALERT_STATUS_QUEUE, durable=True,
+            f"{queue_prefix}{author_id}", durable=True, exclusive=False, auto_delete=False
         )
 
-        await queue.bind(exchange, routing_key=str(author_id))
-        await statuses_queue.bind(exchange, routing_key=config.ALERT_STATUS_QUEUE)
+        await queue.bind(exchange, routing_key=f"{queue_prefix}{author_id}")
 
-        asyncio.create_task(self.queue_iter(queue, exchange))
+        if status_queue:
+            statuses_queue = await channel.declare_queue(
+                status_queue,
+                durable=True,
+            )
+
+            await statuses_queue.bind(exchange, routing_key=config.ALERT_STATUS_QUEUE)
+
+        await consumer_tasks_manager.start_queue_iter(exchange_name, author_id, queue, exchange)
 
         return exchange
 

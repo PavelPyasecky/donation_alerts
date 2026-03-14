@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package campaign;
+
+service CampaignService {
+  rpc GetByIDAuthorID(GetByIDAuthorIDRequest) returns (Campaign) {}
+  rpc ListByAuthorID(GetByAuthorIDRequest) returns (CampaignList) {}
+}
+
+message Campaign {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  string target_amount = 4;
+  string collected_amount = 5;
+  float progress_percentage = 6;
+  bool is_active = 7;
+  bool is_default = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string start_at = 11;
+  string end_at = 12;
+  bool is_active_now = 13;
+}
+
+message CampaignList {
+  repeated Campaign campaigns = 1;
+}
+
+message GetByAuthorIDRequest {
+  int64 author_id = 1;
+}
+
+message GetByIDAuthorIDRequest {
+  int64 author_id = 1;
+  int64 campaign_id = 2;
+}
