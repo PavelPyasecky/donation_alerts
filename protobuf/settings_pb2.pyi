@@ -101,12 +101,14 @@ class AlertSettingList(_message.Message):
     def __init__(self, alert_settings: _Optional[_Iterable[_Union[AlertSetting, _Mapping]]] = ...) -> None: ...
 
 class AlertSettingListRequest(_message.Message):
-    __slots__ = ("author_id", "group_id")
+    __slots__ = ("author_id", "group_id", "updated_at")
     AUTHOR_ID_FIELD_NUMBER: _ClassVar[int]
     GROUP_ID_FIELD_NUMBER: _ClassVar[int]
+    UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
     author_id: int
     group_id: int
-    def __init__(self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ...) -> None: ...
+    updated_at: str
+    def __init__(self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...
 
 class AlertSettingRetrieveRequest(_message.Message):
     __slots__ = ("author_id", "id")

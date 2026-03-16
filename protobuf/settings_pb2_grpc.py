@@ -34,8 +34,8 @@ class AlertSettingControllerStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.ListByGroupID = channel.unary_unary(
-                '/settings.AlertSettingController/ListByGroupID',
+        self.ListByGroupIDFilterByUpdatedAt = channel.unary_unary(
+                '/settings.AlertSettingController/ListByGroupIDFilterByUpdatedAt',
                 request_serializer=settings__pb2.AlertSettingListRequest.SerializeToString,
                 response_deserializer=settings__pb2.AlertSettingList.FromString,
                 _registered_method=True)
@@ -49,7 +49,7 @@ class AlertSettingControllerStub(object):
 class AlertSettingControllerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def ListByGroupID(self, request, context):
+    def ListByGroupIDFilterByUpdatedAt(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -64,8 +64,8 @@ class AlertSettingControllerServicer(object):
 
 def add_AlertSettingControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'ListByGroupID': grpc.unary_unary_rpc_method_handler(
-                    servicer.ListByGroupID,
+            'ListByGroupIDFilterByUpdatedAt': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListByGroupIDFilterByUpdatedAt,
                     request_deserializer=settings__pb2.AlertSettingListRequest.FromString,
                     response_serializer=settings__pb2.AlertSettingList.SerializeToString,
             ),
@@ -86,7 +86,7 @@ class AlertSettingController(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def ListByGroupID(request,
+    def ListByGroupIDFilterByUpdatedAt(request,
             target,
             options=(),
             channel_credentials=None,
@@ -99,7 +99,7 @@ class AlertSettingController(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/settings.AlertSettingController/ListByGroupID',
+            '/settings.AlertSettingController/ListByGroupIDFilterByUpdatedAt',
             settings__pb2.AlertSettingListRequest.SerializeToString,
             settings__pb2.AlertSettingList.FromString,
             options,

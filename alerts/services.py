@@ -20,7 +20,7 @@ from alerts.models import (
     WidgetTokenInfo,
     WidgetMessage,
 )
-from configs.redis import get_redis_conn
+from configs.redis import get_user_state_redis_conn
 from configs import config
 
 
@@ -125,7 +125,7 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
                 )
             case MessageTypes.widget_status:
                 if message.data.is_online:
-                    redis_conn = get_redis_conn()
+                    redis_conn = get_user_state_redis_conn()
                     await redis_conn.setex(f"streamer:{author_id}:online", 60, 1)
 
     return wrapper
@@ -150,7 +150,7 @@ async def check_widget_token(widget_token: str) -> WidgetTokenInfo:
     except jwt.InvalidTokenError as e:
         raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
 
-    conn = get_redis_conn()
+    conn = get_user_state_redis_conn()
 
     cache_key = f"streamer:{token_info.author_id}:widget_control"
     value = await conn.get(cache_key)

@@ -1,3 +1,4 @@
+import datetime
 import grpc
 
 from google.protobuf.json_format import MessageToDict
@@ -43,8 +44,10 @@ class AlertSettingsGRPCClient(GRPCClient):
         self.stub = AlertSettingControllerStub(self.channel)
 
     @handle_grpc_errors
-    async def get_alert_settings_list_by_author_id(self, author_id: int, group_id: int) -> list[AlertSetting]:
-        stub = await self.stub.ListByGroupID(AlertSettingListRequest(author_id=author_id, group_id=group_id))
+    async def get_alert_settings_list_by_author_id_filter_by_updated_at(
+        self, author_id: int, group_id: int, updated_at: datetime.datetime
+    ) -> list[AlertSetting]:
+        stub = await self.stub.ListByGroupID(AlertSettingListRequest(author_id=author_id, group_id=group_id, updated_at=str(updated_at)))
         data = MessageToDict(stub, preserving_proto_field_name=True)
         return [AlertSetting(**obj) for obj in data.get("alert_settings", [])]
 
