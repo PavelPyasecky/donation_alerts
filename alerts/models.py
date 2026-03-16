@@ -87,12 +87,6 @@ class SkipAlert(BaseModel):
     donation_id: int
 
 
-class RabbitMessage(BaseModel):
-    type_: RabbitMessageTypes = Field(alias="type")
-    action: str
-    data: Alert | Campaign | SkipAlert | list["AlertSetting"]
-
-
 class AlertSetting(BaseModel):
     id: int
     is_active: bool = Field(False)
@@ -142,3 +136,16 @@ class AlertSetting(BaseModel):
 
     created_at: datetime.datetime
     updated_at: datetime.datetime
+
+
+class AlertSettingsGroup(BaseModel):
+    id: int
+    title: str
+    updated_at: datetime.datetime
+    alert_settings: list[AlertSetting]
+
+
+class RabbitMessage(BaseModel):
+    type_: RabbitMessageTypes = Field(alias="type")
+    action: str
+    data: Alert | Campaign | SkipAlert | AlertSettingsGroup

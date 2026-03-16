@@ -1,10 +1,9 @@
 syntax = "proto3";
 
-package settings;
+package groups;
 
-service AlertSettingController {
-    rpc ListByGroupIDFilterByUpdatedAt(AlertSettingListRequest) returns (AlertSettingList) {}
-    rpc Retrieve(AlertSettingRetrieveRequest) returns (AlertSetting) {}
+service AlertSettingsGroupController {
+    rpc Retrieve(AlertSettingsGroupRetrieveRequest) returns (AlertSettingsGroup) {}
 }
 
 message AlertSetting {
@@ -52,17 +51,16 @@ message AlertSetting {
     int64 speech_synthesis_voice = 42;
 }
 
-message AlertSettingList {
-  repeated AlertSetting alert_settings = 1;
+message AlertSettingsGroup {
+    int64 id = 1;
+    string title = 2;
+    string updated_at = 3;
+    int64 user = 4;
+    repeated AlertSetting alert_settings = 5;
 }
 
-message AlertSettingListRequest {
+message AlertSettingsGroupRetrieveRequest {
     int64 author_id = 1;
     int64 group_id = 2;
     string updated_at = 3;
-}
-
-message AlertSettingRetrieveRequest {
-    int64 author_id = 1;
-    int64 id = 2;
 }

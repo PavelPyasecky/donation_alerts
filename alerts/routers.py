@@ -14,21 +14,26 @@ router = APIRouter()
 async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str, group_id: int):
     widget_token_info = await check_widget_token(widget_token)
 
-    await ws_alerts_manager.connect(widget_token_info.author_id, websocket)
+    await ws_alerts_manager.connect(widget_token_info.author_id, websocket, group_id)
     exchange = await rabbitmq_consumer.create_listener(
         widget_token_info.author_id, config.ALERTS_EXCHANGE, status_queue=config.ALERT_STATUS_QUEUE
     )
 
-    get_send_alert_settings_task = await ws_alerts_manager.start_schedule_task(
+    alerts_settings_group = await ws_alerts_manager.send_current_alert_settings(
+        widget_token_info.author_id,
+        group_id,
+    )
+    await ws_alerts_manager.ensure_alert_settings_task(
+        widget_token_info.author_id,
+        group_id,
         config.GET_ALET_SETTINGS_INTERVAL,
-        ws_alerts_manager._get_and_send_alert_settings,
-        author_id=widget_token_info.author_id,
-        group_id=group_id,
+        alerts_settings_group.updated_at,
     )
 
     await ws_alerts_manager.listen(
         widget_token_info.author_id,
         websocket,
+        group_id,
         get_ws_messages_handler(widget_token_info.author_id, exchange),
     )
 
