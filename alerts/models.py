@@ -20,6 +20,7 @@ class Alert(BaseModel):
     donor_name: str
     video_url: str
     sound_url: str
+    tts_sound_url: str | None = Field(None)
     alert_settings: PageSettings
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
