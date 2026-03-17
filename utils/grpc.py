@@ -24,3 +24,8 @@ def handle_grpc_errors(func):
             raise e
 
     return wrapper
+
+
+class GRPCClient:
+    def __init__(self, url):
+        self.channel = grpc.aio.insecure_channel(url)

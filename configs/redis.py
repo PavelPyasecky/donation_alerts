@@ -12,6 +12,7 @@ def get_user_state_redis_conn():
         db=config.USER_STATE_REDIS_DB,
     )
 
+
 def get_redis_conn():
     return Redis(
         username=config.REDIS_USER,

@@ -2,7 +2,6 @@ import os
 
 from dotenv import load_dotenv
 
-
 dotenv_path = ".env"
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
@@ -40,15 +39,9 @@ USER_STATE_REDIS_DB = getenv("USER_STATE_REDIS_DB")
 GRPC_SERVER_URL = getenv("GRPC_SERVER_URL")
 
 
-ALLOWED_HOSTS = [
-    url.strip()
-    for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if url.strip()
-]
+ALLOWED_HOSTS = [url.strip() for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if url.strip()]
 
 
 CORS_ALLOWED_ORIGINS = [
-    url.strip()
-    for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if url.strip()
+    url.strip() for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if url.strip()
 ]
