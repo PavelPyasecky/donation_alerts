@@ -19,7 +19,7 @@ class Alert(BaseModel):
     message: str
     donor_name: str
     video_url: str
-    sound_url: str
+    voice: str
     alert_settings: PageSettings
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
