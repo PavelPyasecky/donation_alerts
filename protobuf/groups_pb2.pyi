@@ -94,24 +94,26 @@ class AlertSetting(_message.Message):
     speech_synthesis_voice: int
     def __init__(self, id: _Optional[int] = ..., is_active: bool = ..., type: _Optional[str] = ..., activation_type: _Optional[str] = ..., activation_amount: _Optional[str] = ..., sound_duration: _Optional[float] = ..., message_duration: _Optional[float] = ..., appear_effect: _Optional[str] = ..., disappear_effect: _Optional[str] = ..., image_position: _Optional[str] = ..., header_template: _Optional[str] = ..., header_font: _Optional[str] = ..., header_main_color: _Optional[str] = ..., header_additional_color: _Optional[str] = ..., header_font_size: _Optional[int] = ..., header_animation_type: _Optional[str] = ..., header_animation_objects: _Optional[str] = ..., header_animate_all_words: bool = ..., header_shadow_size: _Optional[int] = ..., header_contour_color: _Optional[str] = ..., header_enable_contour: bool = ..., body_template: _Optional[str] = ..., body_font: _Optional[str] = ..., body_main_color: _Optional[str] = ..., body_font_size: _Optional[int] = ..., body_shadow_size: _Optional[int] = ..., body_contour_color: _Optional[str] = ..., body_enable_contour: bool = ..., body_max_message_length: _Optional[int] = ..., content_type: _Optional[str] = ..., content: _Optional[str] = ..., content_animation_type: _Optional[str] = ..., music_file: _Optional[str] = ..., music_volume: _Optional[int] = ..., speech_synthesis_is_enabled: bool = ..., speech_synthesis_min_amount: _Optional[str] = ..., speech_synthesis_volume: _Optional[int] = ..., speech_synthesis_start_type: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ..., group: _Optional[int] = ..., speech_synthesis_voice: _Optional[int] = ...) -> None: ...
 
-class AlertSettingList(_message.Message):
-    __slots__ = ("alert_settings",)
+class AlertSettingsGroup(_message.Message):
+    __slots__ = ("id", "title", "updated_at", "user", "alert_settings")
+    ID_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
+    USER_FIELD_NUMBER: _ClassVar[int]
     ALERT_SETTINGS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    title: str
+    updated_at: str
+    user: int
     alert_settings: _containers.RepeatedCompositeFieldContainer[AlertSetting]
-    def __init__(self, alert_settings: _Optional[_Iterable[_Union[AlertSetting, _Mapping]]] = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., title: _Optional[str] = ..., updated_at: _Optional[str] = ..., user: _Optional[int] = ..., alert_settings: _Optional[_Iterable[_Union[AlertSetting, _Mapping]]] = ...) -> None: ...
 
-class AlertSettingListRequest(_message.Message):
-    __slots__ = ("author_id", "group_id")
+class AlertSettingsGroupRetrieveRequest(_message.Message):
+    __slots__ = ("author_id", "group_id", "updated_at")
     AUTHOR_ID_FIELD_NUMBER: _ClassVar[int]
     GROUP_ID_FIELD_NUMBER: _ClassVar[int]
+    UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
     author_id: int
     group_id: int
-    def __init__(self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ...) -> None: ...
-
-class AlertSettingRetrieveRequest(_message.Message):
-    __slots__ = ("author_id", "id")
-    AUTHOR_ID_FIELD_NUMBER: _ClassVar[int]
-    ID_FIELD_NUMBER: _ClassVar[int]
-    author_id: int
-    id: int
-    def __init__(self, author_id: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
+    updated_at: str
+    def __init__(self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...

@@ -4,14 +4,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class PageSettings(BaseModel):
-    max_message_length: int
-    font_size: int
-    min_amount: float
-    allow_message: bool
-    video_min_amount: str
-
-
 class Alert(BaseModel):
     id: int
     author_id: int
@@ -19,9 +11,8 @@ class Alert(BaseModel):
     message: str
     donor_name: str
     video_url: str
-    sound_url: str
     tts_sound_url: str | None = Field(None)
-    alert_settings: PageSettings
+    voice: str
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
 
@@ -88,12 +79,6 @@ class SkipAlert(BaseModel):
     donation_id: int
 
 
-class RabbitMessage(BaseModel):
-    type_: RabbitMessageTypes = Field(alias="type")
-    action: str
-    data: Alert | Campaign | SkipAlert | list["AlertSetting"]
-
-
 class AlertSetting(BaseModel):
     id: int
     is_active: bool = Field(False)
@@ -143,3 +128,16 @@ class AlertSetting(BaseModel):
 
     created_at: datetime.datetime
     updated_at: datetime.datetime
+
+
+class AlertSettingsGroup(BaseModel):
+    id: int
+    title: str
+    updated_at: datetime.datetime
+    alert_settings: list[AlertSetting]
+
+
+class RabbitMessage(BaseModel):
+    type_: RabbitMessageTypes = Field(alias="type")
+    action: str
+    data: Alert | Campaign | SkipAlert | AlertSettingsGroup

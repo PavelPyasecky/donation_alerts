@@ -1,13 +1,14 @@
+import datetime
 import grpc
 
 from google.protobuf.json_format import MessageToDict
 
-from alerts.models import AlertSetting, Campaign
+from alerts.models import AlertSetting, AlertSettingsGroup, Campaign
 from configs import config
 from protobuf.campaigns_pb2 import GetByAuthorIDRequest, GetByIDAuthorIDRequest
 from protobuf.campaigns_pb2_grpc import CampaignServiceStub
-from protobuf.settings_pb2 import AlertSettingListRequest, AlertSettingRetrieveRequest
-from protobuf.settings_pb2_grpc import AlertSettingControllerStub
+from protobuf.groups_pb2 import AlertSettingsGroupRetrieveRequest
+from protobuf.groups_pb2_grpc import AlertSettingsGroupControllerStub
 from utils.grpc import handle_grpc_errors
 
 
@@ -22,8 +23,12 @@ class CampaignGRPCClient(GRPCClient):
         self.stub = CampaignServiceStub(self.channel)
 
     @handle_grpc_errors
-    async def get_campaign_by_id_author_id(self, author_id: int, campaign_id: int) -> Campaign:
-        stub = await self.stub.GetByIDAuthorID(GetByIDAuthorIDRequest(author_id=author_id, campaign_id=campaign_id))
+    async def get_campaign_by_id_author_id(
+        self, author_id: int, campaign_id: int
+    ) -> Campaign:
+        stub = await self.stub.GetByIDAuthorID(
+            GetByIDAuthorIDRequest(author_id=author_id, campaign_id=campaign_id)
+        )
         data = MessageToDict(
             stub,
             preserving_proto_field_name=True,
@@ -37,17 +42,25 @@ class CampaignGRPCClient(GRPCClient):
         return [Campaign(**obj, author_id=author_id) for obj in data]
 
 
-class AlertSettingsGRPCClient(GRPCClient):
+class AlertSettingsGroupGRPCClient(GRPCClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stub = AlertSettingControllerStub(self.channel)
+        self.stub = AlertSettingsGroupControllerStub(self.channel)
 
     @handle_grpc_errors
-    async def get_alert_settings_list_by_author_id(self, author_id: int, group_id: int) -> list[AlertSetting]:
-        stub = await self.stub.ListByGroupID(AlertSettingListRequest(author_id=author_id, group_id=group_id))
+    async def get_alert_settings_group_filter_updated_at(
+        self, author_id: int, group_id: int, updated_at: datetime.datetime
+    ) -> AlertSettingsGroup:
+        stub = await self.stub.Retrieve(
+            AlertSettingsGroupRetrieveRequest(
+                author_id=author_id, group_id=group_id, updated_at=str(updated_at)
+            )
+        )
         data = MessageToDict(stub, preserving_proto_field_name=True)
-        return [AlertSetting(**obj) for obj in data.get("alert_settings", [])]
+        if not data:
+            return None
+        return AlertSettingsGroup(**data)
 
 
 campaign_grpc_client = CampaignGRPCClient()
-alert_settings_grpc_client = AlertSettingsGRPCClient()
+alert_settings_group_grpc_client = AlertSettingsGroupGRPCClient()
