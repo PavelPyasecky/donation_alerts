@@ -199,7 +199,24 @@ class AlertsWSManager(WSManager):
             if aid == author_id
         )
 
-    async def broadcast(self, author_id: int, data: dict, group_id: int):
+    async def broadcast(self, author_id: int, data: dict, group_id: int | None = None):
+        if group_id is None:
+            if not self.is_author_connected(author_id):
+                logging.error("Author not in connections list")
+                return
+            tasks: list[asyncio.Task | asyncio.Future] = []
+            keys = [(aid, gid) for (aid, gid) in self.connections.keys() if aid == author_id]
+            for (_, gid) in keys:
+                await self.clear_disconnected(author_id, gid)
+                key = _connection_key(author_id, gid)
+                async with self.lock:
+                    if key not in self.connections:
+                        continue
+                    tasks.extend(ws.send_json(data) for ws in self.connections[key])
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=False)
+            return
+
         if not self.is_author_connected(author_id, group_id):
             logging.error("Author not in connections list for this group")
             return

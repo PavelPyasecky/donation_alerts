@@ -4,14 +4,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class PageSettings(BaseModel):
-    max_message_length: int
-    font_size: int
-    min_amount: float
-    allow_message: bool
-    video_min_amount: str
-
-
 class Alert(BaseModel):
     id: int
     author_id: int
@@ -20,7 +12,6 @@ class Alert(BaseModel):
     donor_name: str
     video_url: str
     voice: str
-    alert_settings: PageSettings
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
 
