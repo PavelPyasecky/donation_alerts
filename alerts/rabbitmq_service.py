@@ -4,11 +4,11 @@ from asyncio import AbstractEventLoop
 from aio_pika import connect_robust
 from aio_pika.abc import AbstractExchange, AbstractChannel, AbstractRobustConnection, ExchangeType
 
-from alerts.services import consumer_tasks_manager
+# from alerts.services import consumer_tasks_manager
 from configs import config
 
 
-class RabbitMQConsumer:
+class OLDRabbitMQConsumer:
     def __init__(self):
         self.channels: list[AbstractChannel] = []
         self.author_iters: dict[int, asyncio.Task] = {}
@@ -47,4 +47,4 @@ class RabbitMQConsumer:
         return exchange
 
 
-rabbitmq_consumer = RabbitMQConsumer()
+old_rabbitmq_consumer = OLDRabbitMQConsumer()

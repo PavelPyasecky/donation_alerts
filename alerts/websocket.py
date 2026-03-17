@@ -1,13 +1,16 @@
 import asyncio
 import datetime
+import json
 import logging
 
+from aio_pika.abc import AbstractIncomingMessage
 from fastapi import WebSocketException, status
 from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from alerts.grpc import alert_settings_group_grpc_client
 from alerts.models import RabbitMessage, RabbitMessageTypes
-from configs.redis import get_redis_conn
+from models.widget_message import WidgetMessage
+from utils.websocket_manager import WSManager
 
 
 REDIS_ALERT_SETTING_LAST_UPDATED_AT_KEY = "alert_setting"
@@ -17,7 +20,7 @@ def _connection_key(author_id: int, group_id: int) -> tuple[int, int]:
     return (author_id, group_id)
 
 
-class WSManager:
+class OLDWSManager:
     def __init__(self):
         self.lock = asyncio.Lock()
         self.connections: dict[int, list[WebSocket]] = {}
@@ -25,9 +28,7 @@ class WSManager:
     async def connect(self, author_id: int, websocket: WebSocket):
         await websocket.accept()
         if websocket.client_state != WebSocketState.CONNECTED:
-            logging.error(
-                f"Websocket accept error: websocket status {websocket.client_state}"
-            )
+            logging.error(f"Websocket accept error: websocket status {websocket.client_state}")
             raise WebSocketException(
                 status.WS_1006_ABNORMAL_CLOSURE,
                 f"Websocket accept error: websocket status {websocket.client_state}",
@@ -92,9 +93,7 @@ class WSManager:
 
         await asyncio.gather(*tasks, return_exceptions=False)
 
-    async def listen(
-        self, author_id: int, websocket: WebSocket, on_message: callable = None
-    ):
+    async def listen(self, author_id: int, websocket: WebSocket, on_message: callable = None):
         try:
             while True:
                 data = await websocket.receive_json()
@@ -108,13 +107,11 @@ class WSManager:
         finally:
             await self.disconnect(author_id, websocket)
 
-    async def start_schedule_task(
-        self, interval_seconds: int, action: callable, **kwargs
-    ):
+    async def start_schedule_task(self, interval_seconds: int, action: callable, **kwargs):
         return asyncio.create_task(action(interval_seconds=interval_seconds, **kwargs))
 
 
-class AlertsWSManager(WSManager):
+class OLDAlertsWSManager(OLDWSManager):
     """WSManager for alerts: one monitoring task per (author_id, group_id)."""
 
     def __init__(self):
@@ -125,9 +122,7 @@ class AlertsWSManager(WSManager):
     async def connect(self, author_id: int, websocket: WebSocket, group_id: int):
         await websocket.accept()
         if websocket.client_state != WebSocketState.CONNECTED:
-            logging.error(
-                f"Websocket accept error: websocket status {websocket.client_state}"
-            )
+            logging.error(f"Websocket accept error: websocket status {websocket.client_state}")
             raise WebSocketException(
                 status.WS_1006_ABNORMAL_CLOSURE,
                 f"Websocket accept error: websocket status {websocket.client_state}",
@@ -194,9 +189,7 @@ class AlertsWSManager(WSManager):
                 return False
             return True
         return any(
-            self.is_author_connected(author_id, gid)
-            for (aid, gid) in self.connections.keys()
-            if aid == author_id
+            self.is_author_connected(author_id, gid) for (aid, gid) in self.connections.keys() if aid == author_id
         )
 
     async def broadcast(self, author_id: int, data: dict, group_id: int | None = None):
@@ -206,7 +199,7 @@ class AlertsWSManager(WSManager):
                 return
             tasks: list[asyncio.Task | asyncio.Future] = []
             keys = [(aid, gid) for (aid, gid) in self.connections.keys() if aid == author_id]
-            for (_, gid) in keys:
+            for _, gid in keys:
                 await self.clear_disconnected(author_id, gid)
                 key = _connection_key(author_id, gid)
                 async with self.lock:
@@ -290,7 +283,9 @@ class AlertsWSManager(WSManager):
 
         return alerts_settings_group
 
-    async def _get_and_send_alert_settings(self, interval_seconds: int, author_id: int, group_id: int, initial_updated_at: datetime.datetime):
+    async def _get_and_send_alert_settings(
+        self, interval_seconds: int, author_id: int, group_id: int, initial_updated_at: datetime.datetime
+    ):
         updated_at = initial_updated_at
 
         while True:
@@ -320,5 +315,39 @@ class AlertsWSManager(WSManager):
             await asyncio.sleep(interval_seconds)
 
 
+# ws_alerts_manager = AlertsWSManager()
+# ws_campaigns_manager = WSManager()
+
+
+class AlertsWSManager(WSManager):
+    async def broadcast_alerts_group(
+        self, ws_key: any, author_id: int, group_id: int, updated_at: list[datetime.datetime]
+    ):
+        if not self.is_author_connected(ws_key):
+            return False
+
+        alert_settings_group = await alert_settings_group_grpc_client.get_alert_settings_group_filter_updated_at(
+            author_id, group_id, updated_at[0]
+        )
+        if alert_settings_group is None:
+            return True
+
+        updated_at[0] = alert_settings_group.updated_at[0]
+
+        message = WidgetMessage.make_alert_settings_group_message(alert_settings_group)
+        await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
+        return True
+    
+    def on_rmq_message(self, ws_key: any):
+        async def _on_rmq_message(message: AbstractIncomingMessage):
+            async with message.process():
+                if not self.is_author_connected(ws_key):
+                    await message.nack(requeue=True)
+                    return False
+                data = json.loads(message.body.decode())
+                message_model = WidgetMessage(**data)
+                await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
+                return True
+
+        return _on_rmq_message
 ws_alerts_manager = AlertsWSManager()
-ws_campaigns_manager = WSManager()

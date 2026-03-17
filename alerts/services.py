@@ -6,22 +6,15 @@ import logging
 
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange, AbstractQueue
-from fastapi import WebSocketDisconnect, WebSocketException, status
+from fastapi import Request, WebSocketDisconnect, WebSocketException, status
 
 from alerts.grpc import alert_settings_group_grpc_client
-from alerts.websocket import WSManager, ws_alerts_manager, ws_campaigns_manager
-from alerts.models import (
-    Alert,
-    AlertStatus,
-    MessageTypes,
-    RabbitMQAlertStatus,
-    RabbitMessage,
-    Statuses,
-    WidgetTokenInfo,
-    WidgetMessage,
-)
+from alerts.websocket import WSManager, ws_alerts_manager
+from models.alert import AlertStatus, RabbitMQAlertStatus
+from models.widget_message import WidgetMessage, WidgetMessageTypes
 from configs.redis import get_user_state_redis_conn
 from configs import config
+from utils.task_manager import TaskManager
 
 
 class ConsumerTasksManager:
@@ -31,7 +24,9 @@ class ConsumerTasksManager:
         self.ws_campaigns_manager = ws_campaigns_manager
         self.lock = asyncio.Lock()
 
-    async def start_queue_iter(self, manager_type: str, author_id: int, queue: AbstractQueue, exchange: AbstractExchange):
+    async def start_queue_iter(
+        self, manager_type: str, author_id: int, queue: AbstractQueue, exchange: AbstractExchange
+    ):
         async with self.lock:
             if author_id in self.authors_tasks:
                 self.authors_tasks[author_id].cancel()
@@ -43,7 +38,7 @@ class ConsumerTasksManager:
             if author_id in self.authors_tasks:
                 self.authors_tasks[author_id].cancel()
                 self.authors_tasks.pop(author_id)
-    
+
     def _get_current_manager(self, manager_type: str) -> WSManager:
         match manager_type:
             case config.ALERTS_EXCHANGE:
@@ -72,24 +67,32 @@ class ConsumerTasksManager:
                                     await self.remove_task(author_id)
                                     await message.nack()
                                     return
-                                asyncio.create_task(send_message_to_author_service(ws_manager, message_model.data.author_id, message_model, exchange))
+                                asyncio.create_task(
+                                    send_message_to_author_service(
+                                        ws_manager, message_model.data.author_id, message_model, exchange
+                                    )
+                                )
                             case config.CAMPAIGNS_EXCHANGE:
                                 if not ws_manager.is_author_connected(author_id):
                                     await ws_manager.clear_disconnected(author_id)
                                     await self.remove_task(author_id)
                                     await message.nack()
                                     return
-                                asyncio.create_task(send_message_to_author_service(ws_manager, message_model.data.id, message_model, exchange))
+                                asyncio.create_task(
+                                    send_message_to_author_service(
+                                        ws_manager, message_model.data.id, message_model, exchange
+                                    )
+                                )
                     except Exception as e:
                         logging.error(f"Error when process message from rabbitmq: {e}")
                         continue
 
 
-consumer_tasks_manager = ConsumerTasksManager(ws_alerts_manager, ws_campaigns_manager)
+# consumer_tasks_manager = ConsumerTasksManager(ws_alerts_manager, ws_campaigns_manager)
 
 
 async def send_message_to_author_service(
-    ws_manager: WSManager, id_: int, message: RabbitMessage, exchange: AbstractExchange, current_attemp: int = 1
+    ws_manager: WSManager, id_: int, message: WidgetMessage, exchange: AbstractExchange, current_attemp: int = 1
 ) -> AlertStatus:
     try:
         await ws_manager.broadcast(id_, message.model_dump(mode="json", by_alias=True))
@@ -117,46 +120,24 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
         message = WidgetMessage(**message_data)
 
         match message.type_:
-            case MessageTypes.alert_status:
-                alert_status = RabbitMQAlertStatus(author_id=author_id, **message.data.model_dump())
-                await exchange.publish(
-                    message=Message(body=alert_status.model_dump_json().encode()),
-                    routing_key=config.ALERT_STATUS_QUEUE,
-                )
-            case MessageTypes.widget_status:
-                if message.data.is_online:
-                    redis_conn = get_user_state_redis_conn()
-                    await redis_conn.setex(f"streamer:{author_id}:online", 60, 1)
+            case WidgetMessageTypes.update:
+                match message.action:
+                    case "alert_status":
+                        alert_status = RabbitMQAlertStatus(author_id=author_id, **message.data.model_dump())
+                        await exchange.publish(
+                            message=Message(body=alert_status.model_dump_json().encode()),
+                            routing_key=config.ALERT_STATUS_QUEUE,
+                        )
+                    case "widget_status":
+                        if message.data.is_online:
+                            redis_conn = get_user_state_redis_conn()
+                            await redis_conn.setex(f"streamer:{author_id}:online", 60, 1)
 
     return wrapper
 
 
-def decode_custom_jwt(token: str) -> WidgetTokenInfo:
-    secret_key = config.WIDGET_TOKEN_SECRET
-    algorithm = "HS256"
-
-    payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-
-    return WidgetTokenInfo(**payload)
+class AlertTaskManager(TaskManager):
+    pass
 
 
-async def check_widget_token(widget_token: str) -> WidgetTokenInfo:
-    try:
-        token_info = decode_custom_jwt(widget_token)
-    except jwt.InvalidTokenError as e:
-        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
-
-    conn = get_user_state_redis_conn()
-
-    cache_key = f"streamer:{token_info.author_id}:widget_control"
-    value = await conn.get(cache_key)
-    if value is None:
-        logging.warning(f"Widget control uuid for author {token_info.author_id} not exists")
-        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
-
-    control_uuid = value.decode()
-
-    if control_uuid is None or control_uuid != token_info.control_uuid:
-        logging.warning(f"Widget control uuid for author {token_info.author_id} incorrect")
-        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
-    return token_info
+alert_task_manager = AlertTaskManager()

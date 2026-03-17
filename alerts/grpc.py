@@ -1,20 +1,14 @@
 import datetime
-import grpc
 
 from google.protobuf.json_format import MessageToDict
 
-from alerts.models import AlertSetting, AlertSettingsGroup, Campaign
+from alerts.models import AlertSettingsGroup, Campaign
 from configs import config
 from protobuf.campaigns_pb2 import GetByAuthorIDRequest, GetByIDAuthorIDRequest
 from protobuf.campaigns_pb2_grpc import CampaignServiceStub
 from protobuf.groups_pb2 import AlertSettingsGroupRetrieveRequest
 from protobuf.groups_pb2_grpc import AlertSettingsGroupControllerStub
-from utils.grpc import handle_grpc_errors
-
-
-class GRPCClient:
-    def __init__(self):
-        self.channel = grpc.aio.insecure_channel(config.GRPC_SERVER_URL)
+from utils.grpc import GRPCClient, handle_grpc_errors
 
 
 class CampaignGRPCClient(GRPCClient):
@@ -62,5 +56,5 @@ class AlertSettingsGroupGRPCClient(GRPCClient):
         return AlertSettingsGroup(**data)
 
 
-campaign_grpc_client = CampaignGRPCClient()
-alert_settings_group_grpc_client = AlertSettingsGroupGRPCClient()
+campaign_grpc_client = CampaignGRPCClient(config.GRPC_SERVER_URL)
+alert_settings_group_grpc_client = AlertSettingsGroupGRPCClient(config.GRPC_SERVER_URL)

@@ -4,21 +4,22 @@ from fastapi import FastAPI
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
-from alerts.rabbitmq_service import rabbitmq_consumer
-from alerts.routers import router
+# from alerts.rabbitmq_service import rabbitmq_consumer
+# from alerts.routers import router
+from utils.rabbitmq import rabbitmq
+from routers import widgets_router
 from configs import config
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    loop = asyncio.get_event_loop()
-    await rabbitmq_consumer.connect(config.RMQ_URL, loop)
+    await rabbitmq.connect(config.RMQ_URL)
     yield
-    await rabbitmq_consumer.close()
+    await rabbitmq.close()
 
 
 app = FastAPI(lifespan=lifespan)
-app.include_router(router)
+app.include_router(widgets_router)
 
 app.add_middleware(
     TrustedHostMiddleware,

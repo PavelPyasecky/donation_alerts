@@ -31,42 +31,6 @@ class RabbitMQAlertStatus(AlertStatus):
     author_id: int
 
 
-class MessageTypes(Enum):
-    alert_status = "alert_status"
-    widget_status = "widget_status"
-
-
-class WidgetStatus(BaseModel):
-    is_online: bool
-
-
-class WidgetMessage(BaseModel):
-    type_: MessageTypes = Field(alias="type")
-    data: AlertStatus | WidgetStatus
-
-
-class Campaign(BaseModel):
-    id: int
-    author_id: int
-    title: str
-    description: str = Field("")
-    target_amount: str
-    collected_amount: str
-    progress_percentage: float
-    is_active: bool = Field(False)
-    is_default: bool = Field(False)
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    start_at: datetime.datetime
-    end_at: datetime.datetime
-    is_active_now: bool = Field(False)
-
-
-class RabbitMessageTypes(Enum):
-    event = "event"
-    update = "update"
-
-
 class SkipAlert(BaseModel):
     author_id: int
     donation_id: int
@@ -129,8 +93,3 @@ class AlertSettingsGroup(BaseModel):
     updated_at: datetime.datetime
     alert_settings: list[AlertSetting]
 
-
-class RabbitMessage(BaseModel):
-    type_: RabbitMessageTypes = Field(alias="type")
-    action: str
-    data: Alert | Campaign | SkipAlert | AlertSettingsGroup
