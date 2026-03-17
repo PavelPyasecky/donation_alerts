@@ -1,5 +1,5 @@
 from aio_pika import connect_robust
-from aio_pika.abc import AbstractRobustConnection, AbstractChannel, ExchangeType, AbstractQueue
+from aio_pika.abc import ExchangeType, AbstractQueue
 
 
 class RabbitMQ:

@@ -1,11 +1,8 @@
-import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
-# from alerts.rabbitmq_service import rabbitmq_consumer
-# from alerts.routers import router
 from utils.rabbitmq import rabbitmq
 from routers import widgets_router
 from configs import config

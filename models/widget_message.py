@@ -2,8 +2,10 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from alerts.models import AlertSettingsGroup, Campaign, SkipAlert
 from models.alert import Alert, AlertStatus
+from models.campaign import Campaign
+from models.alert import AlertSettingsGroup
+from models.alert import SkipAlert
 from models.widget_status import WidgetStatus
 
 
@@ -19,4 +21,12 @@ class WidgetMessage(BaseModel):
 
     @classmethod
     def make_alert_settings_group_message(cls, alert_settings_group: AlertSettingsGroup):
-        return cls(type=WidgetMessageTypes.update, action="alert_settings", data=alert_settings_group)
+        return cls(
+            type=WidgetMessageTypes.update,
+            action="alert_settings",
+            data=alert_settings_group,
+        )
+
+    @classmethod
+    def make_campaign_message(cls, campaign: Campaign):
+        return cls(type=WidgetMessageTypes.update, action="campaign", data=campaign)

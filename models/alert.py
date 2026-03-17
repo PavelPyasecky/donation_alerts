@@ -1,4 +1,5 @@
 import datetime
+
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -41,41 +42,41 @@ class AlertSetting(BaseModel):
     is_active: bool = Field(False)
     type_: str = Field(alias="type")
 
-    activation_type: str
-    activation_amount: str
-    sound_duration: int
-    message_duration: int
-    appear_effect: str
-    disappear_effect: str
-    image_position: str
+    activation_type: str | None = Field(None)
+    activation_amount: str | None = Field(None)
+    sound_duration: int | None = Field(None)
+    message_duration: int | None = Field(None)
+    appear_effect: str | None = Field(None)
+    disappear_effect: str | None = Field(None)
+    image_position: str | None = Field(None)
 
-    header_template: str
-    header_font: str
-    header_main_color: str
-    header_additional_color: str
-    header_font_size: int
-    header_animation_type: str
-    header_animation_objects: str
+    header_template: str | None = Field(None)
+    header_font: str | None = Field(None)
+    header_main_color: str | None = Field(None)
+    header_additional_color: str | None = Field(None)
+    header_font_size: int | None = Field(None)
+    header_animation_type: str | None = Field(None)
+    header_animation_objects: str | None = Field(None)
     header_animate_all_words: bool = Field(False)
-    header_shadow_size: int
-    header_contour_color: str
+    header_shadow_size: int | None = Field(None)
+    header_contour_color: str | None = Field(None)
     header_enable_contour: bool = Field(False)
 
-    body_template: str
-    body_font: str
-    body_main_color: str
-    body_font_size: int
-    body_shadow_size: int
-    body_contour_color: str
+    body_template: str | None = Field(None)
+    body_font: str | None = Field(None)
+    body_main_color: str | None = Field(None)
+    body_font_size: int | None = Field(None)
+    body_shadow_size: int | None = Field(None)
+    body_contour_color: str | None = Field(None)
     body_enable_contour: bool = Field(False)
-    body_max_message_length: int
+    body_max_message_length: int | None = Field(None)
 
-    content_type: str
+    content_type: str | None = Field(None)
     content: str | None = Field(None)
     content_animation_type: str
 
     music_file: str | None = Field(None)
-    music_volume: int
+    music_volume: int | None = Field(None)
 
     speech_synthesis_is_enabled: bool | None = Field(None)
     speech_synthesis_min_amount: str | None = Field(None)
@@ -92,4 +93,3 @@ class AlertSettingsGroup(BaseModel):
     title: str
     updated_at: datetime.datetime
     alert_settings: list[AlertSetting]
-

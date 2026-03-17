@@ -13,9 +13,7 @@ class WSManager:
     async def connect(self, key: any, websocket: WebSocket):
         await websocket.accept()
         if websocket.client_state != WebSocketState.CONNECTED:
-            logging.error(
-                f"Websocket accept error: websocket status {websocket.client_state}"
-            )
+            logging.error(f"Websocket accept error: websocket status {websocket.client_state}")
             raise WebSocketException(
                 status.WS_1006_ABNORMAL_CLOSURE,
                 f"Websocket accept error: websocket status {websocket.client_state}",
@@ -70,19 +68,25 @@ class WSManager:
         if not self.is_author_connected(key):
             logging.error(f"WS connection {key} not in connections list")
             return
+
         await self.clear_disconnected(key)
 
         async with self.lock:
-            tasks = []
+            websockets = list(self.connections.get(key, []))
 
-            for ws in self.connections[key]:
-                tasks.append(ws.send_json(data))
+        async def _safe_send(ws: WebSocket):
+            try:
+                await ws.send_json(data)
+            except (WebSocketDisconnect, RuntimeError) as e:
+                logging.warning(f"Error sending to WS connection {key}: {e!r}. " "Removing websocket from connections.")
+                await self.disconnect(key, ws)
 
-        await asyncio.gather(*tasks, return_exceptions=False)
+        if not websockets:
+            return
 
-    async def listen(
-        self, key: any, websocket: WebSocket, on_message: callable = None
-    ):
+        await asyncio.gather(*(_safe_send(ws) for ws in websockets), return_exceptions=True)
+
+    async def listen(self, key: any, websocket: WebSocket, on_message: callable = None):
         try:
             while True:
                 data = await websocket.receive_json()
@@ -96,9 +100,7 @@ class WSManager:
         finally:
             await self.disconnect(key, websocket)
 
-    def start_schedule_task(
-        self, interval_seconds: float, action: callable, *args, **kwargs
-    ) -> asyncio.Task:
+    def start_schedule_task(self, interval_seconds: float, action: callable, *args, **kwargs) -> asyncio.Task:
         async def scheduler(*args, **kwargs):
             while True:
                 result = await action(*args, **kwargs)

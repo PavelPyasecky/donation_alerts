@@ -7,7 +7,50 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class AlertSetting(_message.Message):
-    __slots__ = ("id", "is_active", "type", "activation_type", "activation_amount", "sound_duration", "message_duration", "appear_effect", "disappear_effect", "image_position", "header_template", "header_font", "header_main_color", "header_additional_color", "header_font_size", "header_animation_type", "header_animation_objects", "header_animate_all_words", "header_shadow_size", "header_contour_color", "header_enable_contour", "body_template", "body_font", "body_main_color", "body_font_size", "body_shadow_size", "body_contour_color", "body_enable_contour", "body_max_message_length", "content_type", "content", "content_animation_type", "music_file", "music_volume", "speech_synthesis_is_enabled", "speech_synthesis_min_amount", "speech_synthesis_volume", "speech_synthesis_start_type", "created_at", "updated_at", "group", "speech_synthesis_voice")
+    __slots__ = (
+        "id",
+        "is_active",
+        "type",
+        "activation_type",
+        "activation_amount",
+        "sound_duration",
+        "message_duration",
+        "appear_effect",
+        "disappear_effect",
+        "image_position",
+        "header_template",
+        "header_font",
+        "header_main_color",
+        "header_additional_color",
+        "header_font_size",
+        "header_animation_type",
+        "header_animation_objects",
+        "header_animate_all_words",
+        "header_shadow_size",
+        "header_contour_color",
+        "header_enable_contour",
+        "body_template",
+        "body_font",
+        "body_main_color",
+        "body_font_size",
+        "body_shadow_size",
+        "body_contour_color",
+        "body_enable_contour",
+        "body_max_message_length",
+        "content_type",
+        "content",
+        "content_animation_type",
+        "music_file",
+        "music_volume",
+        "speech_synthesis_is_enabled",
+        "speech_synthesis_min_amount",
+        "speech_synthesis_volume",
+        "speech_synthesis_start_type",
+        "created_at",
+        "updated_at",
+        "group",
+        "speech_synthesis_voice",
+    )
     ID_FIELD_NUMBER: _ClassVar[int]
     IS_ACTIVE_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -92,7 +135,51 @@ class AlertSetting(_message.Message):
     updated_at: str
     group: int
     speech_synthesis_voice: int
-    def __init__(self, id: _Optional[int] = ..., is_active: bool = ..., type: _Optional[str] = ..., activation_type: _Optional[str] = ..., activation_amount: _Optional[str] = ..., sound_duration: _Optional[float] = ..., message_duration: _Optional[float] = ..., appear_effect: _Optional[str] = ..., disappear_effect: _Optional[str] = ..., image_position: _Optional[str] = ..., header_template: _Optional[str] = ..., header_font: _Optional[str] = ..., header_main_color: _Optional[str] = ..., header_additional_color: _Optional[str] = ..., header_font_size: _Optional[int] = ..., header_animation_type: _Optional[str] = ..., header_animation_objects: _Optional[str] = ..., header_animate_all_words: bool = ..., header_shadow_size: _Optional[int] = ..., header_contour_color: _Optional[str] = ..., header_enable_contour: bool = ..., body_template: _Optional[str] = ..., body_font: _Optional[str] = ..., body_main_color: _Optional[str] = ..., body_font_size: _Optional[int] = ..., body_shadow_size: _Optional[int] = ..., body_contour_color: _Optional[str] = ..., body_enable_contour: bool = ..., body_max_message_length: _Optional[int] = ..., content_type: _Optional[str] = ..., content: _Optional[str] = ..., content_animation_type: _Optional[str] = ..., music_file: _Optional[str] = ..., music_volume: _Optional[int] = ..., speech_synthesis_is_enabled: bool = ..., speech_synthesis_min_amount: _Optional[str] = ..., speech_synthesis_volume: _Optional[int] = ..., speech_synthesis_start_type: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ..., group: _Optional[int] = ..., speech_synthesis_voice: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        is_active: bool = ...,
+        type: _Optional[str] = ...,
+        activation_type: _Optional[str] = ...,
+        activation_amount: _Optional[str] = ...,
+        sound_duration: _Optional[float] = ...,
+        message_duration: _Optional[float] = ...,
+        appear_effect: _Optional[str] = ...,
+        disappear_effect: _Optional[str] = ...,
+        image_position: _Optional[str] = ...,
+        header_template: _Optional[str] = ...,
+        header_font: _Optional[str] = ...,
+        header_main_color: _Optional[str] = ...,
+        header_additional_color: _Optional[str] = ...,
+        header_font_size: _Optional[int] = ...,
+        header_animation_type: _Optional[str] = ...,
+        header_animation_objects: _Optional[str] = ...,
+        header_animate_all_words: bool = ...,
+        header_shadow_size: _Optional[int] = ...,
+        header_contour_color: _Optional[str] = ...,
+        header_enable_contour: bool = ...,
+        body_template: _Optional[str] = ...,
+        body_font: _Optional[str] = ...,
+        body_main_color: _Optional[str] = ...,
+        body_font_size: _Optional[int] = ...,
+        body_shadow_size: _Optional[int] = ...,
+        body_contour_color: _Optional[str] = ...,
+        body_enable_contour: bool = ...,
+        body_max_message_length: _Optional[int] = ...,
+        content_type: _Optional[str] = ...,
+        content: _Optional[str] = ...,
+        content_animation_type: _Optional[str] = ...,
+        music_file: _Optional[str] = ...,
+        music_volume: _Optional[int] = ...,
+        speech_synthesis_is_enabled: bool = ...,
+        speech_synthesis_min_amount: _Optional[str] = ...,
+        speech_synthesis_volume: _Optional[int] = ...,
+        speech_synthesis_start_type: _Optional[str] = ...,
+        created_at: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+        group: _Optional[int] = ...,
+        speech_synthesis_voice: _Optional[int] = ...,
+    ) -> None: ...
 
 class AlertSettingsGroup(_message.Message):
     __slots__ = ("id", "title", "updated_at", "user", "alert_settings")
@@ -106,7 +193,14 @@ class AlertSettingsGroup(_message.Message):
     updated_at: str
     user: int
     alert_settings: _containers.RepeatedCompositeFieldContainer[AlertSetting]
-    def __init__(self, id: _Optional[int] = ..., title: _Optional[str] = ..., updated_at: _Optional[str] = ..., user: _Optional[int] = ..., alert_settings: _Optional[_Iterable[_Union[AlertSetting, _Mapping]]] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        title: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+        user: _Optional[int] = ...,
+        alert_settings: _Optional[_Iterable[_Union[AlertSetting, _Mapping]]] = ...,
+    ) -> None: ...
 
 class AlertSettingsGroupRetrieveRequest(_message.Message):
     __slots__ = ("author_id", "group_id", "updated_at")
@@ -116,4 +210,6 @@ class AlertSettingsGroupRetrieveRequest(_message.Message):
     author_id: int
     group_id: int
     updated_at: str
-    def __init__(self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ..., updated_at: _Optional[str] = ...
+    ) -> None: ...
