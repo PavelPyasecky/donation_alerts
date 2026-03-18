@@ -15,6 +15,7 @@ class Alert(BaseModel):
     voice: str
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
+    setting: "AlertSetting" | None = Field(None)
 
 
 class Statuses(Enum):
