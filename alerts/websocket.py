@@ -27,7 +27,7 @@ class AlertsWSManager(WSManager):
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
-    def on_rmq_message(self, ws_key: any):
+    def on_rmq_message(self, ws_key: any, author_id: int):
         async def _on_rmq_message(message: AbstractIncomingMessage):
             if not self.is_author_connected(ws_key):
                 await message.nack(requeue=True)
@@ -39,10 +39,10 @@ class AlertsWSManager(WSManager):
                 case WidgetMessageTypes.update:
                     match message_model.action:
                         case "test_alert":
-                            alert_settings = await alert_settings_grpc_client.get_alert_settings(
-                                ws_key.author_id, message_model.data.id
+                            alert_setting = await alert_settings_grpc_client.get_alert_settings(
+                                author_id, message_model.data.setting
                             )
-                            message_model.data.setting = alert_settings
+                            message_model.data.setting = alert_setting
                             
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True
