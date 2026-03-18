@@ -7,7 +7,21 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Campaign(_message.Message):
-    __slots__ = ("id", "title", "description", "target_amount", "collected_amount", "progress_percentage", "is_active", "is_default", "created_at", "updated_at", "start_at", "end_at", "is_active_now")
+    __slots__ = (
+        "id",
+        "title",
+        "description",
+        "target_amount",
+        "collected_amount",
+        "progress_percentage",
+        "is_active",
+        "is_default",
+        "created_at",
+        "updated_at",
+        "start_at",
+        "end_at",
+        "is_active_now",
+    )
     ID_FIELD_NUMBER: _ClassVar[int]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
@@ -34,7 +48,22 @@ class Campaign(_message.Message):
     start_at: str
     end_at: str
     is_active_now: bool
-    def __init__(self, id: _Optional[int] = ..., title: _Optional[str] = ..., description: _Optional[str] = ..., target_amount: _Optional[str] = ..., collected_amount: _Optional[str] = ..., progress_percentage: _Optional[float] = ..., is_active: bool = ..., is_default: bool = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., is_active_now: bool = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        title: _Optional[str] = ...,
+        description: _Optional[str] = ...,
+        target_amount: _Optional[str] = ...,
+        collected_amount: _Optional[str] = ...,
+        progress_percentage: _Optional[float] = ...,
+        is_active: bool = ...,
+        is_default: bool = ...,
+        created_at: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+        start_at: _Optional[str] = ...,
+        end_at: _Optional[str] = ...,
+        is_active_now: bool = ...,
+    ) -> None: ...
 
 class CampaignList(_message.Message):
     __slots__ = ("campaigns",)
