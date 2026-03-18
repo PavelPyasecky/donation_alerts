@@ -5,19 +5,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class Alert(BaseModel):
-    id: int
-    author_id: int
-    amount: float
-    message: str
-    donor_name: str
-    video_url: str
-    voice: str
-    donation_id: int | None = Field(None)
-    timestamp: datetime.datetime
-    setting: "AlertSetting" | None = Field(None)
-
-
 class Statuses(Enum):
     error = "error"
     delivered = "delivered"
@@ -94,3 +81,17 @@ class AlertSettingsGroup(BaseModel):
     title: str
     updated_at: datetime.datetime
     alert_settings: list[AlertSetting]
+
+
+class Alert(BaseModel):
+    id: int
+    author_id: int
+    amount: float
+    message: str
+    donor_name: str
+    video_url: str
+    voice: str
+    donation_id: int | None = Field(None)
+    timestamp: datetime.datetime
+    setting: AlertSetting | None = Field(None)
+
