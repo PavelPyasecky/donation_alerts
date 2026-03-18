@@ -9,6 +9,12 @@ class WSManager:
     def __init__(self):
         self.lock = asyncio.Lock()
         self.connections: dict[any, list[WebSocket]] = {}
+    
+    async def add_connection(self, key: any, websocket: WebSocket):
+        async with self.lock:
+            if key not in self.connections:
+                self.connections[key] = []
+            self.connections[key].append(websocket)
 
     async def connect(self, key: any, websocket: WebSocket):
         await websocket.accept()
@@ -18,10 +24,7 @@ class WSManager:
                 status.WS_1006_ABNORMAL_CLOSURE,
                 f"Websocket accept error: websocket status {websocket.client_state}",
             )
-        async with self.lock:
-            if key not in self.connections:
-                self.connections[key] = []
-            self.connections[key].append(websocket)
+        await self.add_connection(key, websocket)
         logging.info(f"WS connection {key} connected")
 
     async def disconnect(self, key: any, websocket: WebSocket):

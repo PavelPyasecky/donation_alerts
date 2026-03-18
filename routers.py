@@ -43,13 +43,16 @@ async def websocket_alert_endpoint(
             await ws_alerts_manager.disconnect(key, websocket)
             raise WebSocketException(status.WS_1003_UNSUPPORTED_DATA, "settings group not found")
         message = WidgetMessage.make_alert_settings_group_message(alert_settings_group)
-        await ws_alerts_manager.broadcast(key, message.model_dump(mode="json", by_alias=True))
+
+        group_key = (key, group_id)
+        await ws_alerts_manager.add_connection(group_key, websocket)
+        await ws_alerts_manager.broadcast(group_key, message.model_dump(mode="json", by_alias=True))
 
         await alert_task_manager.start_single_schedule_task(
-            (key, group_id),
+            group_key,
             5,
             ws_alerts_manager.broadcast_alerts_group,
-            key,
+            group_key,
             widget_token_info.author_id,
             group_id,
             [alert_settings_group.updated_at],
