@@ -3,8 +3,8 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 
-from alerts.grpc import alert_settings_group_grpc_client
-from models.widget_message import WidgetMessage
+from alerts.grpc import alert_settings_group_grpc_client, alert_settings_grpc_client
+from models.widget_message import WidgetMessage, WidgetMessageTypes
 from utils.websocket_manager import WSManager
 
 
@@ -34,6 +34,16 @@ class AlertsWSManager(WSManager):
                 return False
             data = json.loads(message.body.decode())
             message_model = WidgetMessage(**data)
+
+            match message_model.type_:
+                case WidgetMessageTypes.update:
+                    match message_model.action:
+                        case "test_alert":
+                            alert_settings = await alert_settings_grpc_client.get_alert_settings(
+                                ws_key.author_id, message_model.data.id
+                            )
+                            message_model.data.setting = alert_settings
+                            
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True
 

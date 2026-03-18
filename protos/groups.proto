@@ -2,53 +2,10 @@ syntax = "proto3";
 
 package groups;
 
+import "protos/settings.proto";
+
 service AlertSettingsGroupController {
     rpc Retrieve(AlertSettingsGroupRetrieveRequest) returns (AlertSettingsGroup) {}
-}
-
-message AlertSetting {
-    int64 id = 1;
-    bool is_active = 2;
-    string type = 3;
-    string activation_type = 4;
-    string activation_amount = 5;
-    float sound_duration = 6;
-    float message_duration = 7;
-    string appear_effect = 8;
-    string disappear_effect = 9;
-    string image_position = 10;
-    string header_template = 11;
-    string header_font = 12;
-    string header_main_color = 13;
-    string header_additional_color = 14;
-    int32 header_font_size = 15;
-    string header_animation_type = 16;
-    string header_animation_objects = 17;
-    bool header_animate_all_words = 18;
-    int32 header_shadow_size = 19;
-    string header_contour_color = 20;
-    bool header_enable_contour = 21;
-    string body_template = 22;
-    string body_font = 23;
-    string body_main_color = 24;
-    int32 body_font_size = 25;
-    int32 body_shadow_size = 26;
-    string body_contour_color = 27;
-    bool body_enable_contour = 28;
-    int32 body_max_message_length = 29;
-    string content_type = 30;
-    string content = 31;
-    string content_animation_type = 32;
-    string music_file = 33;
-    int32 music_volume = 34;
-    bool speech_synthesis_is_enabled = 35;
-    string speech_synthesis_min_amount = 36;
-    int32 speech_synthesis_volume = 37;
-    string speech_synthesis_start_type = 38;
-    string created_at = 39;
-    string updated_at = 40;
-    int64 group = 41;
-    int64 speech_synthesis_voice = 42;
 }
 
 message AlertSettingsGroup {
@@ -56,7 +13,7 @@ message AlertSettingsGroup {
     string title = 2;
     string updated_at = 3;
     int64 user = 4;
-    repeated AlertSetting alert_settings = 5;
+    repeated settings.AlertSetting alert_settings = 5;
 }
 
 message AlertSettingsGroupRetrieveRequest {
