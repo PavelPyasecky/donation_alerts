@@ -33,6 +33,11 @@ async def websocket_alert_endpoint(
 
     await ws_alerts_manager.connect(key, websocket)
 
+    async def _stop_key_tasks():
+        await alert_task_manager.stop_single_async_task((key, -1))
+
+    ws_alerts_manager.register_on_empty(key, _stop_key_tasks)
+
     if group_id:
         alert_settings_group = await alert_settings_group_grpc_client.get_alert_settings_group_filter_updated_at(
             widget_token_info.author_id,
@@ -47,6 +52,11 @@ async def websocket_alert_endpoint(
         group_key = (key, group_id)
         await ws_alerts_manager.add_connection(group_key, websocket)
         await ws_alerts_manager.broadcast(group_key, message.model_dump(mode="json", by_alias=True))
+
+        async def _stop_group_tasks():
+            await alert_task_manager.stop_single_async_task(group_key)
+
+        ws_alerts_manager.register_on_empty(group_key, _stop_group_tasks)
 
         await alert_task_manager.start_single_schedule_task(
             group_key,
@@ -86,6 +96,11 @@ async def websocket_campaigns_endpoint(
     await ws_campaigns_manager.broadcast(campaign_id, message.model_dump(mode="json", by_alias=True))
 
     exchange, queue = await rabbitmq.declare_queue(config.CAMPAIGNS_EXCHANGE, f"campaigns_{campaign_id}")
+
+    async def _stop_campaign_tasks():
+        await alert_task_manager.stop_single_async_task((campaign_id, 1))
+
+    ws_campaigns_manager.register_on_empty(campaign_id, _stop_campaign_tasks)
 
     await alert_task_manager.start_single_async_task(
         (campaign_id, 1),
