@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package groups;
 
-import "protos/settings.proto";
+import "settings.proto";
 
 service AlertSettingsGroupController {
     rpc Retrieve(AlertSettingsGroupRetrieveRequest) returns (AlertSettingsGroup) {}
