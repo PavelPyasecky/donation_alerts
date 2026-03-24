@@ -90,9 +90,7 @@ class Alert(BaseModel):
     amount: float
     message: str
     donor_name: str
-    video_url: str
-    voice: str
+    voice: str | None = Field(None)
     donation_id: int | None = Field(None)
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime = Field(alias="timestamp", validation_alias="created_at")
     setting: AlertSetting | int | None = Field(None)
-

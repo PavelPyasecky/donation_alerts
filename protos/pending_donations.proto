@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package alerts;
+
+service PendingDonationsService {
+  rpc GetPendingDonations(GetPendingDonationsRequest) returns (PendingDonationsResponse) {}
+}
+
+message GetPendingDonationsRequest {
+  int64 author_id = 1;
+}
+
+message PendingDonationsResponse {
+  repeated AlertData pending_donations = 1;
+}
+
+message AlertData {
+  int64 id = 1;
+  int64 author_id = 2;
+  int64 donation_id = 3;
+  string amount = 4;
+  string message = 5;
+  string donor_name = 6;
+  string voice = 7;
+  string created_at = 8;
+}

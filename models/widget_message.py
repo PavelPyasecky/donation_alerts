@@ -17,7 +17,7 @@ class WidgetMessageTypes(Enum):
 class WidgetMessage(BaseModel):
     type_: WidgetMessageTypes = Field(alias="type")
     action: str
-    data: Alert | Campaign | SkipAlert | AlertSettingsGroup | AlertStatus | WidgetStatus
+    data: Alert | Campaign | SkipAlert | AlertSettingsGroup | AlertStatus | WidgetStatus | list[Alert]
 
     @classmethod
     def make_alert_settings_group_message(cls, alert_settings_group: AlertSettingsGroup):
@@ -30,3 +30,7 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_campaign_message(cls, campaign: Campaign):
         return cls(type=WidgetMessageTypes.update, action="campaign", data=campaign)
+
+    @classmethod
+    def make_pending_alerts_message(cls, alerts: list[Alert]):
+        return cls(type=WidgetMessageTypes.update, action="pending_alerts", data=alerts)

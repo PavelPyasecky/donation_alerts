@@ -12,7 +12,7 @@ from fastapi import (
 from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
 from campaigns.websocket import ws_campaigns_manager
-from alerts.grpc import alert_settings_group_grpc_client
+from alerts.grpc import alert_settings_group_grpc_client, alerts_grpc_client
 from campaigns.grpc import campaign_grpc_client
 from configs import config
 from models.widget_message import WidgetMessage
@@ -28,6 +28,7 @@ async def websocket_alert_endpoint(
     websocket: WebSocket,
     group_id: int = None,
     widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
+    get_pending_donations: bool = False,
 ):
     key = widget_token_info.author_id
 
@@ -67,6 +68,11 @@ async def websocket_alert_endpoint(
             group_id,
             [alert_settings_group.updated_at],
         )
+
+    if get_pending_donations:
+        pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
+        message = WidgetMessage.make_pending_alerts_message(pending_donations)
+        await ws_alerts_manager.broadcast(group_key, message.model_dump(mode="json", by_alias=True))
 
     exchange, queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, str(key))
 
