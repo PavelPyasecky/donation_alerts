@@ -28,6 +28,7 @@ class SkipAlert(BaseModel):
 class AlertSetting(BaseModel):
     id: int
     is_active: bool = Field(False)
+    is_default: bool = Field(False)
     type_: str = Field(alias="type")
 
     activation_type: str | None = Field(None)
