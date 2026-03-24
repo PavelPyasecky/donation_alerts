@@ -7,11 +7,14 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 
-def getenv(name: str) -> str:
+def getenv(name: str, default=None) -> str:
     env = os.getenv(name)
 
     if env is None:
-        raise ValueError(f"{name} is None")
+        if default is None:
+            raise ValueError(f"{name} is None")
+        else:
+            return default
     return env
 
 
@@ -23,6 +26,7 @@ ALERT_STATUS_QUEUE = getenv("ALERT_STATUS_QUEUE")
 WIDGET_TOKEN_SECRET = getenv("WIDGET_TOKEN_SECRET")
 
 GET_ALET_SETTINGS_INTERVAL = int(getenv("GET_ALET_SETTINGS_INTERVAL"))
+CLEAN_UP_TASKS_INTERVAL = int(getenv("CLEAN_UP_TASKS_INTERVAL", 60))
 
 REDIS_USER = os.getenv("REDIS_USER")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")

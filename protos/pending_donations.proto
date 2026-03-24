@@ -22,5 +22,5 @@ message AlertData {
   string message = 5;
   string donor_name = 6;
   string voice = 7;
-  string created_at = 8;
+  string timestamp = 8;
 }

@@ -19,7 +19,7 @@ class PendingDonationsResponse(_message.Message):
     def __init__(self, pending_donations: _Optional[_Iterable[_Union[AlertData, _Mapping]]] = ...) -> None: ...
 
 class AlertData(_message.Message):
-    __slots__ = ("id", "author_id", "donation_id", "amount", "message", "donor_name", "voice", "created_at")
+    __slots__ = ("id", "author_id", "donation_id", "amount", "message", "donor_name", "voice", "timestamp")
     ID_FIELD_NUMBER: _ClassVar[int]
     AUTHOR_ID_FIELD_NUMBER: _ClassVar[int]
     DONATION_ID_FIELD_NUMBER: _ClassVar[int]
@@ -27,7 +27,7 @@ class AlertData(_message.Message):
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
     DONOR_NAME_FIELD_NUMBER: _ClassVar[int]
     VOICE_FIELD_NUMBER: _ClassVar[int]
-    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     id: int
     author_id: int
     donation_id: int
@@ -35,5 +35,5 @@ class AlertData(_message.Message):
     message: str
     donor_name: str
     voice: str
-    created_at: str
-    def __init__(self, id: _Optional[int] = ..., author_id: _Optional[int] = ..., donation_id: _Optional[int] = ..., amount: _Optional[str] = ..., message: _Optional[str] = ..., donor_name: _Optional[str] = ..., voice: _Optional[str] = ..., created_at: _Optional[str] = ...) -> None: ...
+    timestamp: str
+    def __init__(self, id: _Optional[int] = ..., author_id: _Optional[int] = ..., donation_id: _Optional[int] = ..., amount: _Optional[str] = ..., message: _Optional[str] = ..., donor_name: _Optional[str] = ..., voice: _Optional[str] = ..., timestamp: _Optional[str] = ...) -> None: ...
