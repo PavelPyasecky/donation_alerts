@@ -10,8 +10,7 @@ from alerts.grpc import campaign_grpc_client
 router = APIRouter()
 
 
-@router.websocket("/ws/alerts/{widget_token}")
-async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str, group_id: int):
+async def _handle_alerts_websocket(websocket: WebSocket, widget_token: str, group_id: int):
     widget_token_info = await check_widget_token(widget_token)
 
     await ws_alerts_manager.connect(widget_token_info.author_id, websocket, group_id)
@@ -42,8 +41,7 @@ async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str, grou
     )
 
 
-@router.websocket("/ws/campaigns/{campaign_id}/{widget_token}")
-async def websocket_campaigns_endpoint(websocket: WebSocket, campaign_id: int, widget_token: str):
+async def _handle_campaigns_websocket(websocket: WebSocket, campaign_id: int, widget_token: str):
     widget_token_info = await check_widget_token(widget_token)
     campaign = await campaign_grpc_client.get_campaign_by_id_author_id(widget_token_info.author_id, campaign_id)
     if not campaign or campaign.author_id != widget_token_info.author_id:
@@ -53,3 +51,38 @@ async def websocket_campaigns_endpoint(websocket: WebSocket, campaign_id: int, w
     exchange = await rabbitmq_consumer.create_listener(campaign_id, config.CAMPAIGNS_EXCHANGE, "campaigns_")
     await ws_campaigns_manager.broadcast(campaign_id, campaign.model_dump(mode="json"))
     await ws_campaigns_manager.listen(campaign_id, websocket)
+
+
+def _resolve_widget_token(path_token: str | None, query_token: str | None) -> str:
+    widget_token = (path_token or query_token or "").strip()
+    if not widget_token:
+        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "invalid widget_token")
+    return widget_token
+
+
+@router.websocket("/ws/alerts/{widget_token}")
+@router.websocket("/alerts/{widget_token}")
+async def websocket_alert_endpoint(websocket: WebSocket, widget_token: str, group_id: int):
+    await _handle_alerts_websocket(websocket, widget_token, group_id)
+
+
+@router.websocket("/ws/alerts")
+@router.websocket("/alerts")
+async def websocket_alert_legacy_endpoint(websocket: WebSocket, group_id: int, token: str | None = None):
+    await _handle_alerts_websocket(websocket, _resolve_widget_token(None, token), group_id)
+
+
+@router.websocket("/ws/campaigns/{campaign_id}/{widget_token}")
+@router.websocket("/campaigns/{campaign_id}/{widget_token}")
+async def websocket_campaigns_endpoint(websocket: WebSocket, campaign_id: int, widget_token: str):
+    await _handle_campaigns_websocket(websocket, campaign_id, widget_token)
+
+
+@router.websocket("/ws/campaigns")
+@router.websocket("/campaigns")
+async def websocket_campaigns_legacy_endpoint(
+    websocket: WebSocket,
+    campaign_id: int,
+    token: str | None = None,
+):
+    await _handle_campaigns_websocket(websocket, campaign_id, _resolve_widget_token(None, token))

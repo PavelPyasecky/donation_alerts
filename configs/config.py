@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -14,6 +15,40 @@ def getenv(name: str) -> str:
     if env is None:
         raise ValueError(f"{name} is None")
     return env
+
+
+def _split_csv_env(name: str) -> list[str]:
+    return [value.strip() for value in os.getenv(name, "").split(",") if value.strip()]
+
+
+def _normalize_host(value: str) -> str:
+    candidate = value.strip()
+    if not candidate:
+        return ""
+
+    if "://" in candidate:
+        parsed = urlparse(candidate)
+        return (parsed.hostname or "").strip()
+
+    return candidate.split("/")[0].split(":")[0].strip()
+
+
+def _build_allowed_hosts() -> list[str]:
+    explicit_hosts = [_normalize_host(value) for value in _split_csv_env("ALLOWED_HOSTS")]
+    explicit_hosts = [host for host in explicit_hosts if host]
+    if explicit_hosts:
+        return explicit_hosts
+
+    derived_hosts = [
+        _normalize_host(os.getenv("DOMAIN", "")),
+        _normalize_host(os.getenv("API_DOMAIN", "")),
+        _normalize_host(os.getenv("PUBLIC_IP", "")),
+    ]
+    derived_hosts = [host for host in derived_hosts if host]
+    if derived_hosts:
+        return list(dict.fromkeys([*derived_hosts, "localhost", "127.0.0.1"]))
+
+    return ["*"]
 
 
 # RABITMQ
@@ -40,15 +75,11 @@ USER_STATE_REDIS_DB = getenv("USER_STATE_REDIS_DB")
 GRPC_SERVER_URL = getenv("GRPC_SERVER_URL")
 
 
-ALLOWED_HOSTS = [
-    url.strip()
-    for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if url.strip()
-]
+ALLOWED_HOSTS = _build_allowed_hosts()
 
 
 CORS_ALLOWED_ORIGINS = [
     url.strip()
-    for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for url in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
     if url.strip()
 ]
