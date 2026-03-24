@@ -4,6 +4,8 @@ import logging
 from fastapi import WebSocket, WebSocketException, status
 from fastapi.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
+from configs import config
+
 
 class WSManager:
     def __init__(self):
@@ -11,7 +13,7 @@ class WSManager:
         self.connections: dict[any, list[WebSocket]] = {}
         self._on_empty_callbacks: dict[any, list[callable]] = {}
         self._cleanup_task: asyncio.Task | None = None
-        self.start_cleanup_loop(2)
+        self.start_cleanup_loop(config.CLEAN_UP_TASKS_INTERVAL)
     
     async def add_connection(self, key: any, websocket: WebSocket):
         async with self.lock:

@@ -92,5 +92,5 @@ class Alert(BaseModel):
     donor_name: str
     voice: str | None = Field(None)
     donation_id: int | None = Field(None)
-    timestamp: datetime.datetime = Field(alias="timestamp", validation_alias="created_at")
+    timestamp: datetime.datetime
     setting: AlertSetting | int | None = Field(None)
