@@ -50,9 +50,4 @@ class AlertsWSManager(WSManager):
         return _on_rmq_message
 
 
-class CampaignsWSManager(WSManager):
-    pass
-
-
 ws_alerts_manager = AlertsWSManager()
-ws_campaigns_manager = CampaignsWSManager()

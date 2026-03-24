@@ -9,6 +9,9 @@ class WSManager:
     def __init__(self):
         self.lock = asyncio.Lock()
         self.connections: dict[any, list[WebSocket]] = {}
+        self._on_empty_callbacks: dict[any, list[callable]] = {}
+        self._cleanup_task: asyncio.Task | None = None
+        self.start_cleanup_loop(2)
     
     async def add_connection(self, key: any, websocket: WebSocket):
         async with self.lock:
@@ -39,6 +42,7 @@ class WSManager:
                 if not self.connections[key]:
                     del self.connections[key]
                     logging.info(f"WS connection {key} fully disconnected")
+                    await self._run_on_empty(key)
                 else:
                     logging.info(
                         f"WS connection  {key} partially disconnected. Remaining: {len(self.connections[key])}"
@@ -55,6 +59,30 @@ class WSManager:
                 )
             )
 
+    async def cleanup_disconnected_all(self) -> None:
+        async with self.lock:
+            disconnected_keys: list[any] = []
+            for key, sockets in list(self.connections.items()):
+                connected = []
+                for ws in sockets:
+                    if ws.client_state == WebSocketState.CONNECTED:
+                        connected.append(ws)
+                    else:
+                        try:
+                            await ws.close()
+                        except RuntimeError:
+                            pass
+                if connected:
+                    self.connections[key] = connected
+                else:
+                    disconnected_keys.append(key)
+                    del self.connections[key]
+            if not disconnected_keys:
+                return
+
+        for key in disconnected_keys:
+            await self._run_on_empty(key)
+
     def is_author_connected(self, key: any) -> bool:
         if key not in self.connections:
             return False
@@ -66,6 +94,11 @@ class WSManager:
         ):
             return False
         return True
+
+    def register_on_empty(self, key: any, callback: callable) -> None:
+        if key not in self._on_empty_callbacks:
+            self._on_empty_callbacks[key] = []
+        self._on_empty_callbacks[key].append(callback)
 
     async def broadcast(self, key: any, data: dict):
         if not self.is_author_connected(key):
@@ -103,12 +136,24 @@ class WSManager:
         finally:
             await self.disconnect(key, websocket)
 
-    def start_schedule_task(self, interval_seconds: float, action: callable, *args, **kwargs) -> asyncio.Task:
-        async def scheduler(*args, **kwargs):
-            while True:
-                result = await action(*args, **kwargs)
-                if not result:
-                    break
-                asyncio.sleep(interval_seconds)
+    async def _run_on_empty(self, key: any) -> None:
+        callbacks = self._on_empty_callbacks.pop(key, [])
+        if not callbacks:
+            return
+        for callback in callbacks:
+            try:
+                await callback()
+            except Exception:
+                logging.exception(f"Error in on-empty callback for key {key}")
 
-        return asyncio.create_task(scheduler(*args, **kwargs))
+    def start_cleanup_loop(self, interval_seconds: float = 30.0) -> asyncio.Task:
+        if self._cleanup_task is not None and not self._cleanup_task.done():
+            return self._cleanup_task
+
+        async def _loop():
+            while True:
+                await asyncio.sleep(interval_seconds)
+                await self.cleanup_disconnected_all()
+
+        self._cleanup_task = asyncio.create_task(_loop())
+        return self._cleanup_task
