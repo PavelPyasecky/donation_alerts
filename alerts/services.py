@@ -1,3 +1,5 @@
+import logging
+
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange
 
@@ -21,6 +23,7 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
                             message=Message(body=alert_status.model_dump_json().encode()),
                             routing_key=config.ALERT_STATUS_QUEUE,
                         )
+                        logging.info(f"Status published to queue {config.ALERT_STATUS_QUEUE}")
                     case "widget_status":
                         if message.data.is_online:
                             redis_conn = get_user_state_redis_conn()
