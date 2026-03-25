@@ -75,6 +75,7 @@ async def websocket_alert_endpoint(
         await ws_alerts_manager.broadcast(group_key, message.model_dump(mode="json", by_alias=True))
 
     exchange, queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, str(key))
+    exchange, statuses_queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, config.ALERT_STATUS_QUEUE)
 
     await alert_task_manager.start_single_async_task(
         (key, -1), rabbitmq.queue_iter, queue, ws_alerts_manager.on_rmq_message(key, widget_token_info.author_id)

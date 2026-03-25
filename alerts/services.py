@@ -14,12 +14,9 @@ logger = logging.getLogger(__name__)
 
 def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
     async def wrapper(message_data: dict):
-        print(f"data: {message_data}")
         message = WidgetMessage(**message_data)
-        print(f"type: {message.type_}")
         match message.type_:
             case WidgetMessageTypes.update:
-                print(f"type: {message.action}")
                 match message.action:
                     case "alert_status":
                         alert_status = RabbitMQAlertStatus(author_id=author_id, **message.data.model_dump())
@@ -27,7 +24,6 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
                             message=Message(body=alert_status.model_dump_json().encode()),
                             routing_key=config.ALERT_STATUS_QUEUE,
                         )
-                        print(f"Status published to queue {config.ALERT_STATUS_QUEUE}")
                     case "widget_status":
                         if message.data.is_online:
                             redis_conn = get_user_state_redis_conn()
