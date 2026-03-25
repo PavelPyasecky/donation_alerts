@@ -13,7 +13,7 @@ from utils.task_manager import TaskManager
 def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
     async def wrapper(message_data: dict):
         message = WidgetMessage(**message_data)
-        logging.info(**message_data)
+        logging.info(f"data: {message_data}")
         logging.info(f"type: {message.type_}")
         match message.type_:
             case WidgetMessageTypes.update:
