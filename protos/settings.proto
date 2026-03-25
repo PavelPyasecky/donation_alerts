@@ -53,6 +53,5 @@ message AlertSetting {
     string created_at = 39;
     string updated_at = 40;
     int64 group = 41;
-    int64 speech_synthesis_voice = 42;
-    bool is_default = 43;
+    bool is_default = 42;
 }
