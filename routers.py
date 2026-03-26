@@ -66,7 +66,7 @@ async def websocket_alert_endpoint(
 
         await alert_task_manager.start_single_schedule_task(
             group_key,
-            config.GET_ALET_SETTINGS_INTERVAL,
+            config.CHECK_NEW_ALET_SETTINGS_INTERVAL,
             ws_alerts_manager.broadcast_alerts_group,
             group_key,
             widget_token_info.author_id,
