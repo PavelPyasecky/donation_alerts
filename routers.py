@@ -19,6 +19,9 @@ from configs import config
 from models.widget_message import WidgetMessage
 from models.widget_token import WidgetTokenInfo
 from services.widgets import parse_widget_token
+from top_donaters.grpc import donations_grpc_client, top_donaters_grpc_client
+from top_donaters.services import top_donaters_task_manager
+from top_donaters.websocket import ws_top_donaters_manager
 from utils.rabbitmq import rabbitmq
 
 widgets_router = APIRouter(prefix="/ws")
@@ -40,7 +43,7 @@ async def websocket_alert_endpoint(
         await alert_task_manager.stop_single_async_task((key, -1))
 
     ws_alerts_manager.register_on_empty(key, _stop_key_tasks)
-    
+
     if group_id:
         alert_settings_group = await alert_settings_group_grpc_client.get_alert_settings_group_filter_updated_at(
             widget_token_info.author_id,
@@ -70,7 +73,7 @@ async def websocket_alert_endpoint(
             group_id,
             [alert_settings_group.updated_at],
         )
-    
+
     if get_ban_words:
         ban_words_updated_at = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
         ban_words = await ban_words_grpc_client.get_ban_words(widget_token_info.author_id, ban_words_updated_at)
@@ -103,7 +106,10 @@ async def websocket_alert_endpoint(
     exchange, statuses_queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, config.ALERT_STATUS_QUEUE)
 
     await alert_task_manager.start_single_async_task(
-        (key, "listen_rabbit"), rabbitmq.queue_iter, queue, ws_alerts_manager.on_rmq_message(key, widget_token_info.author_id)
+        (key, "listen_rabbit"),
+        rabbitmq.queue_iter,
+        queue,
+        ws_alerts_manager.on_rmq_message(key, widget_token_info.author_id),
     )
 
     await ws_alerts_manager.listen(
@@ -144,3 +150,71 @@ async def websocket_campaigns_endpoint(
     )
 
     await ws_campaigns_manager.listen(campaign_id, websocket)
+
+
+@widgets_router.websocket("/top_donaters/")
+async def websocket_top_donaters_endpoint(
+    websocket: WebSocket,
+    setting_id: int,
+    widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
+):
+    author_id = widget_token_info.author_id
+    top_donaters_settings = await top_donaters_grpc_client.get_top_donaters_settings(
+        author_id, setting_id
+    )
+    if not top_donaters_settings or top_donaters_settings.user != author_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "top donaters settings not found")
+
+    await ws_top_donaters_manager.connect(setting_id, websocket)
+    ws_top_donaters_manager.register_setting(
+        setting_id, author_id, top_donaters_settings.period, top_donaters_settings.elements_count
+    )
+
+    async def _stop_top_donaters_tasks():
+        author_id_to_stop = ws_top_donaters_manager.unregister_setting(setting_id)
+        if author_id_to_stop is not None:
+            await top_donaters_task_manager.stop_single_async_task((author_id_to_stop, "listen_rabbit"))
+
+    ws_top_donaters_manager.register_on_empty(setting_id, _stop_top_donaters_tasks)
+
+    message = WidgetMessage.make_top_donaters_settings_message(top_donaters_settings)
+    await ws_top_donaters_manager.broadcast(setting_id, message.model_dump(mode="json", by_alias=True))
+
+    time_now = datetime.datetime.now(datetime.timezone.utc)
+    period_days = 1
+    match top_donaters_settings.period:
+        case "all_time":
+            period_days = 365
+        case "last_month":
+            period_days = 30
+        case "last_week":
+            period_days = 7
+        case "last_day":
+            period_days = 1
+
+    start_time = time_now - datetime.timedelta(days=period_days)
+
+    union_by_donor_names_list = await donations_grpc_client.get_union_by_donor_names_list(
+        author_id,
+        start_time,
+        time_now,
+        top_donaters_settings.elements_count,
+    )
+    message = WidgetMessage.make_union_by_donor_names_list_message(union_by_donor_names_list)
+    await ws_top_donaters_manager.broadcast(setting_id, message.model_dump(mode="json", by_alias=True))
+
+    await ws_top_donaters_manager.seed_cache_if_empty(author_id, top_donaters_settings.period, union_by_donor_names_list)
+
+    _exchange, queue = await rabbitmq.declare_queue(
+        config.ALERTS_EXCHANGE,
+        f"top_donaters_{author_id}",
+    )
+
+    await top_donaters_task_manager.start_single_async_task(
+        (author_id, "listen_rabbit"),
+        rabbitmq.queue_iter,
+        queue,
+        ws_top_donaters_manager.on_rmq_message(author_id),
+    )
+
+    await ws_top_donaters_manager.listen(setting_id, websocket)

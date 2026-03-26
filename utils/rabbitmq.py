@@ -14,10 +14,10 @@ class RabbitMQ:
     async def close(self):
         await self.connection.close()
 
-    async def declare_queue(self, exchange_name: str, queue_name: str):
+    async def declare_queue(self, exchange_name: str, queue_name: str, routing_key: str | None = None):
         exchange = await self.channel.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
         queue = await self.channel.declare_queue(queue_name, durable=True, exclusive=False, auto_delete=False)
-        await queue.bind(exchange, routing_key=queue_name)
+        await queue.bind(exchange, routing_key=routing_key or queue_name)
         return exchange, queue
 
     async def queue_iter(self, queue: AbstractQueue, action: callable):
