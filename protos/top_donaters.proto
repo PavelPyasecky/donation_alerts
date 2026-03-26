@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package settings;
+
+service TopDonatersSettingsService {
+    rpc RetrieveTopDonatersSetting(RetrieveTopDonatersSettingRequest) returns (TopDonatersSetting) {}
+}
+
+message RetrieveTopDonatersSettingRequest {
+    int64 author_id = 1;
+    int64 setting_id = 2;
+}
+
+message TopDonatersSetting {
+    int64 id = 1;
+    int64 user = 2;
+    string title = 3;
+    string period = 4;
+    int32 elements_count = 5;
+    string view_type = 6;
+    string string_template = 7;
+    string font = 8;
+    string color = 9;
+    string style = 10;
+    string font_align = 11;
+    int32 font_size = 12;
+    string shadow_color = 13;
+    int32 shadow_horizontal_offset = 14;
+    int32 shadow_vertical_offset = 15;
+    int32 shadow_blur = 16;
+    string contour_color = 17;
+    int32 contour_width = 18;
+    string created_at = 19;
+    string updated_at = 20;
+}

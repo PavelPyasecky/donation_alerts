@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package donations;
+
+service DonationService {
+  rpc UnionByDonorNamesList(UnionByDonorNamesListRequest) returns (UnionByDonorNamesDonationsListResponse) {}
+}
+
+message UnionByDonorNamesListRequest {
+  int64  author_id  = 1;
+  string start_time = 2;
+  string end_time   = 3;
+  int64  limit      = 4;
+}
+
+message UnionByDonorNamesDonationsListResponse {
+  repeated UnionByDonorNamesDonation union_by_donor_names_donations = 1;
+}
+
+message UnionByDonorNamesDonation {
+  string donor_name      = 1;
+  string total_amount    = 2;
+  int64  total_count     = 3;
+  string last_created_at = 4;
+}
