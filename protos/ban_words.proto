@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package settings;
+
+service BanWordsService {
+    rpc RetrieveBanWords(RetrieveBanWordsRequest) returns (BanWords) {}
+}
+
+message RetrieveBanWordsRequest {
+    int64 author_id = 1;
+    string updated_at = 2;
+}
+
+message BanWords {
+    int64 id = 1;
+    string words = 2;
+    string created_at = 3;
+    string updated_at = 4;
+}

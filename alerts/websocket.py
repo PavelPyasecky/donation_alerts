@@ -3,7 +3,7 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 
-from alerts.grpc import alert_settings_group_grpc_client, alert_settings_grpc_client
+from alerts.grpc import alert_settings_group_grpc_client, alert_settings_grpc_client, ban_words_grpc_client
 from models.widget_message import WidgetMessage, WidgetMessageTypes
 from utils.websocket_manager import WSManager
 
@@ -24,6 +24,15 @@ class AlertsWSManager(WSManager):
         updated_at[0] = alert_settings_group.updated_at
 
         message = WidgetMessage.make_alert_settings_group_message(alert_settings_group)
+        await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
+        return True
+    
+    async def broadcast_ban_words(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
+        ban_words = await ban_words_grpc_client.get_ban_words(author_id, updated_at[0])
+        if ban_words is None:
+            return True
+        updated_at[0] = ban_words.updated_at
+        message = WidgetMessage.make_ban_words_message(ban_words)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 

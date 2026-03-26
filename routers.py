@@ -11,8 +11,9 @@ from fastapi import (
 
 from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
+from campaigns.services import campaign_task_manager
 from campaigns.websocket import ws_campaigns_manager
-from alerts.grpc import alert_settings_group_grpc_client, alerts_grpc_client
+from alerts.grpc import alert_settings_group_grpc_client, alerts_grpc_client, ban_words_grpc_client
 from campaigns.grpc import campaign_grpc_client
 from configs import config
 from models.widget_message import WidgetMessage
@@ -29,6 +30,7 @@ async def websocket_alert_endpoint(
     group_id: int = None,
     widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
     get_pending_donations: bool = False,
+    get_ban_words: bool = True,
 ):
     key = widget_token_info.author_id
 
@@ -38,7 +40,7 @@ async def websocket_alert_endpoint(
         await alert_task_manager.stop_single_async_task((key, -1))
 
     ws_alerts_manager.register_on_empty(key, _stop_key_tasks)
-
+    
     if group_id:
         alert_settings_group = await alert_settings_group_grpc_client.get_alert_settings_group_filter_updated_at(
             widget_token_info.author_id,
@@ -61,13 +63,36 @@ async def websocket_alert_endpoint(
 
         await alert_task_manager.start_single_schedule_task(
             group_key,
-            5,
+            config.GET_ALET_SETTINGS_INTERVAL,
             ws_alerts_manager.broadcast_alerts_group,
             group_key,
             widget_token_info.author_id,
             group_id,
             [alert_settings_group.updated_at],
         )
+    
+    if get_ban_words:
+        ban_words_updated_at = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+        ban_words = await ban_words_grpc_client.get_ban_words(widget_token_info.author_id, ban_words_updated_at)
+        if ban_words is not None:
+            ban_words_updated_at = ban_words.updated_at
+            message = WidgetMessage.make_ban_words_message(ban_words)
+            await ws_alerts_manager.broadcast(key, message.model_dump(mode="json", by_alias=True))
+
+        ban_words_key = (key, "check_ban_words")
+        await alert_task_manager.start_single_schedule_task(
+            ban_words_key,
+            config.CHECK_NEW_BAN_WORDS_INTERVAL,
+            ws_alerts_manager.broadcast_ban_words,
+            key,
+            widget_token_info.author_id,
+            [ban_words_updated_at],
+        )
+
+        async def _stop_ban_words_tasks():
+            await alert_task_manager.stop_single_async_task(ban_words_key)
+
+        ws_alerts_manager.register_on_empty(ban_words_key, _stop_ban_words_tasks)
 
     if get_pending_donations:
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
@@ -78,7 +103,7 @@ async def websocket_alert_endpoint(
     exchange, statuses_queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, config.ALERT_STATUS_QUEUE)
 
     await alert_task_manager.start_single_async_task(
-        (key, -1), rabbitmq.queue_iter, queue, ws_alerts_manager.on_rmq_message(key, widget_token_info.author_id)
+        (key, "listen_rabbit"), rabbitmq.queue_iter, queue, ws_alerts_manager.on_rmq_message(key, widget_token_info.author_id)
     )
 
     await ws_alerts_manager.listen(
@@ -104,13 +129,15 @@ async def websocket_campaigns_endpoint(
 
     exchange, queue = await rabbitmq.declare_queue(config.CAMPAIGNS_EXCHANGE, f"campaigns_{campaign_id}")
 
+    key = (campaign_id, 1)
+
     async def _stop_campaign_tasks():
-        await alert_task_manager.stop_single_async_task((campaign_id, 1))
+        await campaign_task_manager.stop_single_async_task(key)
 
     ws_campaigns_manager.register_on_empty(campaign_id, _stop_campaign_tasks)
 
-    await alert_task_manager.start_single_async_task(
-        (campaign_id, 1),
+    await campaign_task_manager.start_single_async_task(
+        key,
         rabbitmq.queue_iter,
         queue,
         ws_campaigns_manager.on_rmq_message(campaign_id),
