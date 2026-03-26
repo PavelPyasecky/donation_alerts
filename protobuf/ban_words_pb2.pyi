@@ -1,0 +1,25 @@
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from typing import ClassVar as _ClassVar, Optional as _Optional
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class RetrieveBanWordsRequest(_message.Message):
+    __slots__ = ("author_id", "updated_at")
+    AUTHOR_ID_FIELD_NUMBER: _ClassVar[int]
+    UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
+    author_id: int
+    updated_at: str
+    def __init__(self, author_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...
+
+class BanWords(_message.Message):
+    __slots__ = ("id", "words", "created_at", "updated_at")
+    ID_FIELD_NUMBER: _ClassVar[int]
+    WORDS_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    words: str
+    created_at: str
+    updated_at: str
+    def __init__(self, id: _Optional[int] = ..., words: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ...) -> None: ...

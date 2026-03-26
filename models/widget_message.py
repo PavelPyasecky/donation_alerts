@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from models.alert import Alert, AlertStatus
+from models.alert import Alert, AlertStatus, BanWord
 from models.campaign import Campaign
 from models.alert import AlertSettingsGroup
 from models.alert import SkipAlert
@@ -17,7 +17,7 @@ class WidgetMessageTypes(Enum):
 class WidgetMessage(BaseModel):
     type_: WidgetMessageTypes = Field(alias="type")
     action: str
-    data: Alert | Campaign | SkipAlert | AlertSettingsGroup | AlertStatus | WidgetStatus | list[Alert]
+    data: Alert | Campaign | SkipAlert | AlertSettingsGroup | AlertStatus | WidgetStatus | list[Alert] | BanWord
 
     @classmethod
     def make_alert_settings_group_message(cls, alert_settings_group: AlertSettingsGroup):
@@ -34,3 +34,7 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_pending_alerts_message(cls, alerts: list[Alert]):
         return cls(type=WidgetMessageTypes.update, action="pending_alerts", data=alerts)
+    
+    @classmethod
+    def make_ban_words_message(cls, ban_words: BanWord):
+        return cls(type=WidgetMessageTypes.update, action="ban_words", data=ban_words)

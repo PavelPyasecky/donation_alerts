@@ -94,3 +94,10 @@ class Alert(BaseModel):
     donation_id: int | None = Field(None)
     timestamp: datetime.datetime
     setting: AlertSetting | int | None = Field(None)
+
+
+class BanWord(BaseModel):
+    id: int
+    words: str = Field("")
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
