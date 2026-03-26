@@ -13,7 +13,8 @@ message RetrieveBanWordsRequest {
 
 message BanWords {
     int64 id = 1;
-    string words = 2;
-    string created_at = 3;
-    string updated_at = 4;
+    bool is_active = 2;
+    string words = 3;
+    string created_at = 4;
+    string updated_at = 5;
 }

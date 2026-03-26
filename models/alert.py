@@ -88,7 +88,7 @@ class Alert(BaseModel):
     id: int
     author_id: int
     amount: float
-    message: str
+    message: str = Field("")
     donor_name: str
     voice: str | None = Field(None)
     donation_id: int | None = Field(None)
@@ -98,6 +98,7 @@ class Alert(BaseModel):
 
 class BanWord(BaseModel):
     id: int
+    is_active: bool = Field(False)
     words: str = Field("")
     created_at: datetime.datetime
     updated_at: datetime.datetime
