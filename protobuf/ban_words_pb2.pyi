@@ -13,13 +13,15 @@ class RetrieveBanWordsRequest(_message.Message):
     def __init__(self, author_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...
 
 class BanWords(_message.Message):
-    __slots__ = ("id", "words", "created_at", "updated_at")
+    __slots__ = ("id", "is_active", "words", "created_at", "updated_at")
     ID_FIELD_NUMBER: _ClassVar[int]
+    IS_ACTIVE_FIELD_NUMBER: _ClassVar[int]
     WORDS_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
     UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
     id: int
+    is_active: bool
     words: str
     created_at: str
     updated_at: str
-    def __init__(self, id: _Optional[int] = ..., words: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., is_active: bool = ..., words: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ...) -> None: ...
