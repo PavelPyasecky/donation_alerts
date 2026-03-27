@@ -3,29 +3,29 @@ import datetime
 from google.protobuf.json_format import MessageToDict
 
 from configs import config
-from models.donations import Donater
-from models.settings import TopDonatersSettings
-from protobuf.donations_pb2 import UnionByDonorNamesDonation, UnionByDonorNamesListRequest
+from models.donations import Donater, Donation
+from models.settings import StatisticWidgetSettings
+from protobuf.donations_pb2 import LastDonationsListRequest, UnionByDonorNamesDonation, UnionByDonorNamesListRequest
 from protobuf.donations_pb2_grpc import DonationServiceStub
-from protobuf.top_donaters_pb2 import RetrieveTopDonatersSettingRequest
+from protobuf.top_donaters_pb2 import RetrieveStatisticWidgetSettingsRequest
 from utils.grpc import GRPCClient, handle_grpc_errors
-from protobuf.top_donaters_pb2_grpc import TopDonatersSettingsServiceStub
+from protobuf.top_donaters_pb2_grpc import StatisticWidgetSettingsServiceStub
 
 
 class TopDonatersGRPCClient(GRPCClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stub = TopDonatersSettingsServiceStub(self.channel)
+        self.stub = StatisticWidgetSettingsServiceStub(self.channel)
 
     @handle_grpc_errors
-    async def get_top_donaters_settings(self, author_id: int, setting_id: int) -> TopDonatersSettings:
-        stub = await self.stub.RetrieveTopDonatersSetting(
-            RetrieveTopDonatersSettingRequest(author_id=author_id, setting_id=setting_id)
+    async def get_statistic_widget_settings(self, author_id: int, setting_id: int) -> StatisticWidgetSettings:
+        response = await self.stub.RetrieveStatisticWidgetSettings(
+            RetrieveStatisticWidgetSettingsRequest(author_id=author_id, setting_id=setting_id)
         )
-        data = MessageToDict(stub, preserving_proto_field_name=True)
+        data = MessageToDict(response, preserving_proto_field_name=True)
         if not data:
             return None
-        return TopDonatersSettings(**data)
+        return StatisticWidgetSettings(**data)
 
 
 class DonationsGRPCClient(GRPCClient):
@@ -44,6 +44,16 @@ class DonationsGRPCClient(GRPCClient):
         if not data:
             return []
         return [Donater(**obj) for obj in data.get("union_by_donor_names_donations", [])]
+
+    @handle_grpc_errors
+    async def get_last_donations_list(self, author_id: int, limit: int) -> list[Donation]:
+        stub = await self.stub.LastDonationsList(
+            LastDonationsListRequest(author_id=author_id, limit=limit)
+        )
+        data = MessageToDict(stub, preserving_proto_field_name=True)
+        if not data:
+            return []
+        return [Donation(**obj) for obj in data.get("last_donations", [])]
 
 
 top_donaters_grpc_client = TopDonatersGRPCClient(config.GRPC_SERVER_URL)

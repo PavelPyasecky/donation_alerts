@@ -6,8 +6,8 @@ from models.alert import Alert, AlertStatus, BanWord
 from models.campaign import Campaign
 from models.alert import AlertSettingsGroup
 from models.alert import SkipAlert
-from models.donations import Donater
-from models.settings import ModerationSettings, TopDonatersSettings
+from models.donations import Donater, Donation
+from models.settings import ModerationSettings, StatisticWidgetSettings
 from models.top_donaters import DonationEvent
 from models.widget_status import WidgetStatus
 
@@ -29,10 +29,11 @@ class WidgetMessage(BaseModel):
         | WidgetStatus
         | list[Alert]
         | BanWord
-        | TopDonatersSettings
+        | StatisticWidgetSettings
         | list[Donater]
         | DonationEvent
         | ModerationSettings
+        | list[Donation]
     )
 
     @classmethod
@@ -56,8 +57,8 @@ class WidgetMessage(BaseModel):
         return cls(type=WidgetMessageTypes.update, action="ban_words", data=ban_words)
 
     @classmethod
-    def make_top_donaters_settings_message(cls, top_donaters_settings: TopDonatersSettings):
-        return cls(type=WidgetMessageTypes.update, action="top_donaters_settings", data=top_donaters_settings)
+    def make_statistic_widget_settings_message(cls, statistic_widget_settings: StatisticWidgetSettings):
+        return cls(type=WidgetMessageTypes.update, action="statistic_widget_settings", data=statistic_widget_settings)
 
     @classmethod
     def make_union_by_donor_names_list_message(cls, union_by_donor_names_list: list[Donater]):
@@ -66,3 +67,7 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_moderation_settings_message(cls, moderation_settings: ModerationSettings):
         return cls(type=WidgetMessageTypes.update, action="moderation_settings", data=moderation_settings)
+    
+    @classmethod
+    def make_last_donations_list_message(cls, last_donations_list: list[Donation]):
+        return cls(type=WidgetMessageTypes.update, action="last_donations_list", data=last_donations_list)

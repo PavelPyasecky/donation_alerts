@@ -4,6 +4,22 @@ package donations;
 
 service DonationService {
   rpc UnionByDonorNamesList(UnionByDonorNamesListRequest) returns (UnionByDonorNamesDonationsListResponse) {}
+  rpc LastDonationsList(LastDonationsListRequest) returns (LastDonationsListResponse) {}
+}
+message LastDonationsListRequest {
+  int64  author_id  = 1;
+  int64  limit      = 2;
+}
+
+message Donation {
+  int64  id              = 1;
+  string donor_name      = 2;
+  string amount          = 3;
+  string created_at      = 4;
+}
+
+message LastDonationsListResponse {
+  repeated Donation last_donations = 1;
 }
 
 message UnionByDonorNamesListRequest {

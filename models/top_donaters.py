@@ -11,7 +11,7 @@ class DonationEvent(BaseModel):
     donation_id: int
 
 
-class TopDonatersSettingInfo(BaseModel):
+class StatisticWidgetSettingsInfo(BaseModel):
     setting_id: int
     author_id: int
     period: str
