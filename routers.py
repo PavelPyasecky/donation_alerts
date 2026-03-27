@@ -13,7 +13,7 @@ from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
 from campaigns.websocket import ws_campaigns_manager
-from alerts.grpc import alert_settings_group_grpc_client, alerts_grpc_client, ban_words_grpc_client
+from alerts.grpc import alert_settings_group_grpc_client, alerts_grpc_client, ban_words_grpc_client, moderation_settings_grpc_client
 from campaigns.grpc import campaign_grpc_client
 from configs import config
 from models.widget_message import WidgetMessage
@@ -34,6 +34,7 @@ async def websocket_alert_endpoint(
     widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
     get_pending_donations: bool = False,
     get_ban_words: bool = True,
+    get_moderation_settings: bool = False,
 ):
     key = widget_token_info.author_id
 
@@ -96,6 +97,31 @@ async def websocket_alert_endpoint(
             await alert_task_manager.stop_single_async_task(ban_words_key)
 
         ws_alerts_manager.register_on_empty(ban_words_key, _stop_ban_words_tasks)
+
+    if get_moderation_settings:
+        moderation_settings_updated_at = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(widget_token_info.author_id, moderation_settings_updated_at)
+        
+        moderation_settings_key = (key, "check_moderation_settings")
+        if moderation_settings is not None:
+            moderation_settings_updated_at = moderation_settings.updated_at
+            message = WidgetMessage.make_moderation_settings_message(moderation_settings)
+            await ws_alerts_manager.add_connection(moderation_settings_key, websocket)
+            await ws_alerts_manager.broadcast(moderation_settings_key, message.model_dump(mode="json", by_alias=True))
+
+        async def _stop_moderation_settings_tasks():
+            await alert_task_manager.stop_single_async_task(moderation_settings_key)
+
+        ws_alerts_manager.register_on_empty(moderation_settings_key, _stop_moderation_settings_tasks)
+
+        await alert_task_manager.start_single_schedule_task(
+            moderation_settings_key,
+            config.CHECK_NEW_MODERATION_SETTINGS_INTERVAL,
+            ws_alerts_manager.broadcast_moderation_settings,
+            moderation_settings_key,
+            widget_token_info.author_id,
+            [moderation_settings_updated_at],
+        )
 
     if get_pending_donations:
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)

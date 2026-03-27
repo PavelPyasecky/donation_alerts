@@ -1,5 +1,5 @@
 import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TopDonatersSettings(BaseModel):
@@ -26,5 +26,14 @@ class TopDonatersSettings(BaseModel):
     contour_color: str
     contour_width: int
 
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
+class ModerationSettings(BaseModel):
+    id: int
+    is_active: bool = Field(False)
+    duration: int
+    activation_amount: str
     created_at: datetime.datetime
     updated_at: datetime.datetime

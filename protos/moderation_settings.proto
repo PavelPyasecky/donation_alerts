@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package settings;
+
+service ModerationSettingsService {
+    rpc RetrieveModerationSetting(RetrieveModerationSettingRequest) returns (ModerationSetting) {}
+}
+
+message RetrieveModerationSettingRequest {
+    int64 author_id = 1;
+    string updated_at = 2;
+}
+
+message ModerationSetting {
+    int64 id = 1;
+    bool is_active = 2;
+    int32 duration = 3;
+    string activation_amount = 4;
+    string created_at = 5;
+    string updated_at = 6;
+}
