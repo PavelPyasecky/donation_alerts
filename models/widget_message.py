@@ -7,7 +7,7 @@ from models.campaign import Campaign
 from models.alert import AlertSettingsGroup
 from models.alert import SkipAlert
 from models.donations import Donater
-from models.settings import TopDonatersSettings
+from models.settings import ModerationSettings, TopDonatersSettings
 from models.top_donaters import DonationEvent
 from models.widget_status import WidgetStatus
 
@@ -32,6 +32,7 @@ class WidgetMessage(BaseModel):
         | TopDonatersSettings
         | list[Donater]
         | DonationEvent
+        | ModerationSettings
     )
 
     @classmethod
@@ -61,3 +62,7 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_union_by_donor_names_list_message(cls, union_by_donor_names_list: list[Donater]):
         return cls(type=WidgetMessageTypes.update, action="union_by_donor_names_list", data=union_by_donor_names_list)
+    
+    @classmethod
+    def make_moderation_settings_message(cls, moderation_settings: ModerationSettings):
+        return cls(type=WidgetMessageTypes.update, action="moderation_settings", data=moderation_settings)

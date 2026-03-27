@@ -4,8 +4,11 @@ from google.protobuf.json_format import MessageToDict
 
 from configs import config
 from models.alert import Alert, AlertSettingsGroup, AlertSetting, BanWord
+from models.settings import ModerationSettings
 from protobuf.ban_words_pb2 import RetrieveBanWordsRequest
 from protobuf.ban_words_pb2_grpc import BanWordsServiceStub
+from protobuf.moderation_settings_pb2 import RetrieveModerationSettingRequest
+from protobuf.moderation_settings_pb2_grpc import ModerationSettingsServiceStub
 from protobuf.settings_pb2 import GetSettingRequest
 from protobuf.settings_pb2_grpc import SettingsServiceStub
 from protobuf.groups_pb2 import AlertSettingsGroupRetrieveRequest
@@ -75,7 +78,22 @@ class BanWordsGRPCClient(GRPCClient):
         return BanWord(**data)
 
 
+class ModerationSettingsGRPCClient(GRPCClient):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stub = ModerationSettingsServiceStub(self.channel)
+    
+    @handle_grpc_errors
+    async def get_moderation_settings(self, author_id: int, updated_at: datetime.datetime) -> ModerationSettings:
+        stub = await self.stub.RetrieveModerationSetting(RetrieveModerationSettingRequest(author_id=author_id, updated_at=str(updated_at)))
+        data = MessageToDict(stub, preserving_proto_field_name=True)
+        if not data:
+            return None
+        return ModerationSettings(**data)
+
+
 alert_settings_group_grpc_client = AlertSettingsGroupGRPCClient(config.GRPC_SERVER_URL)
 alert_settings_grpc_client = AlertSettingsGRPCClient(config.GRPC_SERVER_URL)
 alerts_grpc_client = AlertSGRPCClient(config.GRPC_SERVER_URL)
 ban_words_grpc_client = BanWordsGRPCClient(config.GRPC_SERVER_URL)
+moderation_settings_grpc_client = ModerationSettingsGRPCClient(config.GRPC_SERVER_URL)
