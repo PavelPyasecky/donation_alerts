@@ -5,7 +5,7 @@ from aio_pika.abc import AbstractIncomingMessage
 
 from configs.redis import get_redis_conn
 from models.donations import Donater
-from models.top_donaters import TopDonatersSettingInfo
+from models.top_donaters import StatisticWidgetSettingsInfo
 from models.widget_message import WidgetMessage, WidgetMessageTypes
 from top_donaters.cache import TopDonatersCache
 from top_donaters.utils import _payload_to_donation, _period_seconds
@@ -15,12 +15,12 @@ from utils.websocket_manager import WSManager
 class TopDonatersWSManager(WSManager):
     def __init__(self):
         super().__init__()
-        self._settings: dict[int, TopDonatersSettingInfo] = {}
+        self._settings: dict[int, StatisticWidgetSettingsInfo] = {}
         self._author_settings: dict[int, set[int]] = {}
         self._cache = TopDonatersCache(get_redis_conn())
 
     def register_setting(self, setting_id: int, author_id: int, period: str, elements_count: int) -> None:
-        self._settings[setting_id] = TopDonatersSettingInfo(
+        self._settings[setting_id] = StatisticWidgetSettingsInfo(
             setting_id=setting_id,
             author_id=author_id,
             period=period,
@@ -75,7 +75,7 @@ class TopDonatersWSManager(WSManager):
 
         return _on_rmq_message
 
-    async def _broadcast_updates(self, author_id: int, settings: list[TopDonatersSettingInfo]) -> None:
+    async def _broadcast_updates(self, author_id: int, settings: list[StatisticWidgetSettingsInfo]) -> None:
         if not settings:
             return
 
@@ -88,7 +88,7 @@ class TopDonatersWSManager(WSManager):
             for setting in period_settings:
                 await self.broadcast(setting.setting_id, payload)
 
-    def _get_settings_for_author(self, author_id: int) -> list[TopDonatersSettingInfo]:
+    def _get_settings_for_author(self, author_id: int) -> list[StatisticWidgetSettingsInfo]:
         setting_ids = self._author_settings.get(author_id, set())
         return [self._settings[setting_id] for setting_id in setting_ids if setting_id in self._settings]
 

@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class TopDonatersSettingsServiceStub(object):
+class StatisticWidgetSettingsServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -34,43 +34,43 @@ class TopDonatersSettingsServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.RetrieveTopDonatersSetting = channel.unary_unary(
-                '/settings.TopDonatersSettingsService/RetrieveTopDonatersSetting',
-                request_serializer=top__donaters__pb2.RetrieveTopDonatersSettingRequest.SerializeToString,
-                response_deserializer=top__donaters__pb2.TopDonatersSetting.FromString,
+        self.RetrieveStatisticWidgetSettings = channel.unary_unary(
+                '/settings.StatisticWidgetSettingsService/RetrieveStatisticWidgetSettings',
+                request_serializer=top__donaters__pb2.RetrieveStatisticWidgetSettingsRequest.SerializeToString,
+                response_deserializer=top__donaters__pb2.StatisticWidgetSettings.FromString,
                 _registered_method=True)
 
 
-class TopDonatersSettingsServiceServicer(object):
+class StatisticWidgetSettingsServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def RetrieveTopDonatersSetting(self, request, context):
+    def RetrieveStatisticWidgetSettings(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_TopDonatersSettingsServiceServicer_to_server(servicer, server):
+def add_StatisticWidgetSettingsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'RetrieveTopDonatersSetting': grpc.unary_unary_rpc_method_handler(
-                    servicer.RetrieveTopDonatersSetting,
-                    request_deserializer=top__donaters__pb2.RetrieveTopDonatersSettingRequest.FromString,
-                    response_serializer=top__donaters__pb2.TopDonatersSetting.SerializeToString,
+            'RetrieveStatisticWidgetSettings': grpc.unary_unary_rpc_method_handler(
+                    servicer.RetrieveStatisticWidgetSettings,
+                    request_deserializer=top__donaters__pb2.RetrieveStatisticWidgetSettingsRequest.FromString,
+                    response_serializer=top__donaters__pb2.StatisticWidgetSettings.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'settings.TopDonatersSettingsService', rpc_method_handlers)
+            'settings.StatisticWidgetSettingsService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('settings.TopDonatersSettingsService', rpc_method_handlers)
+    server.add_registered_method_handlers('settings.StatisticWidgetSettingsService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class TopDonatersSettingsService(object):
+class StatisticWidgetSettingsService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def RetrieveTopDonatersSetting(request,
+    def RetrieveStatisticWidgetSettings(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +83,9 @@ class TopDonatersSettingsService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/settings.TopDonatersSettingsService/RetrieveTopDonatersSetting',
-            top__donaters__pb2.RetrieveTopDonatersSettingRequest.SerializeToString,
-            top__donaters__pb2.TopDonatersSetting.FromString,
+            '/settings.StatisticWidgetSettingsService/RetrieveStatisticWidgetSettings',
+            top__donaters__pb2.RetrieveStatisticWidgetSettingsRequest.SerializeToString,
+            top__donaters__pb2.StatisticWidgetSettings.FromString,
             options,
             channel_credentials,
             insecure,

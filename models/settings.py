@@ -2,7 +2,7 @@ import datetime
 from pydantic import BaseModel, Field
 
 
-class TopDonatersSettings(BaseModel):
+class StatisticWidgetSettings(BaseModel):
     id: int
     title: str
     user: int
