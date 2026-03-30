@@ -135,6 +135,9 @@ async def websocket_alert_endpoint(
         )
         if not statistic_widget_settings or statistic_widget_settings.user != widget_token_info.author_id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "statistic widget settings not found")
+        
+        message = WidgetMessage.make_statistic_widget_settings_message(statistic_widget_settings)
+        await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
         last_donations_list = await donations_grpc_client.get_last_donations_list(
             widget_token_info.author_id, statistic_widget_settings.elements_count
