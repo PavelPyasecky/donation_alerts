@@ -4,11 +4,22 @@ import json
 from aio_pika.abc import AbstractIncomingMessage
 
 from alerts.grpc import alert_settings_group_grpc_client, alert_settings_grpc_client, ban_words_grpc_client, moderation_settings_grpc_client
-from models.widget_message import WidgetMessage, WidgetMessageTypes
+from alerts.services import get_connected_groups, mark_streamer_group_connected, mark_streamer_group_disconnected, mark_streamer_offline, mark_streamer_online
+from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
 from utils.websocket_manager import WSManager
 
 
 class AlertsWSManager(WSManager):
+    async def mark_group_widget_connected(self, author_id: int, group_id: int) -> None:
+        await mark_streamer_online(author_id)
+        await mark_streamer_group_connected(author_id, group_id)
+
+    async def mark_group_widget_disconnected(self, author_id: int, group_id: int) -> None:
+        await mark_streamer_group_disconnected(author_id, group_id)
+        connected_groups = await get_connected_groups(author_id)
+        if not connected_groups:
+            await mark_streamer_offline(author_id)
+
     async def broadcast_alerts_group(
         self, ws_key: any, author_id: int, group_id: int, updated_at: list[datetime.datetime]
     ):
@@ -24,6 +35,20 @@ class AlertsWSManager(WSManager):
         updated_at[0] = alert_settings_group.updated_at
 
         message = WidgetMessage.make_alert_settings_group_message(alert_settings_group)
+        await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
+        return True
+
+    async def broadcast_connected_groups_info(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
+        if not self.is_author_connected(ws_key):
+            return False
+
+        connected_groups_ids = await get_connected_groups(author_id)
+        groups = await alert_settings_group_grpc_client.get_alert_settings_groups(author_id, connected_groups_ids, updated_at[0])
+
+        updated_at[0] = datetime.datetime.now(datetime.timezone.utc)
+        
+        connected_groups_info = ConnectedGroupsInfo(groups=groups, connected_groups_ids=connected_groups_ids)
+        message = WidgetMessage.make_connected_groups_info_message(connected_groups_info)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
     

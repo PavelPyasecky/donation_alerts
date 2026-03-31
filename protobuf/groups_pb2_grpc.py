@@ -39,12 +39,23 @@ class AlertSettingsGroupControllerStub(object):
                 request_serializer=groups__pb2.AlertSettingsGroupRetrieveRequest.SerializeToString,
                 response_deserializer=groups__pb2.AlertSettingsGroup.FromString,
                 _registered_method=True)
+        self.ListByIds = channel.unary_unary(
+                '/groups.AlertSettingsGroupController/ListByIds',
+                request_serializer=groups__pb2.AlertSettingsGroupsListByAuthorIdRequest.SerializeToString,
+                response_deserializer=groups__pb2.AlertSettingsGroupsListByAuthorIdResponse.FromString,
+                _registered_method=True)
 
 
 class AlertSettingsGroupControllerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Retrieve(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListByIds(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +68,11 @@ def add_AlertSettingsGroupControllerServicer_to_server(servicer, server):
                     servicer.Retrieve,
                     request_deserializer=groups__pb2.AlertSettingsGroupRetrieveRequest.FromString,
                     response_serializer=groups__pb2.AlertSettingsGroup.SerializeToString,
+            ),
+            'ListByIds': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListByIds,
+                    request_deserializer=groups__pb2.AlertSettingsGroupsListByAuthorIdRequest.FromString,
+                    response_serializer=groups__pb2.AlertSettingsGroupsListByAuthorIdResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +102,33 @@ class AlertSettingsGroupController(object):
             '/groups.AlertSettingsGroupController/Retrieve',
             groups__pb2.AlertSettingsGroupRetrieveRequest.SerializeToString,
             groups__pb2.AlertSettingsGroup.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListByIds(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/groups.AlertSettingsGroupController/ListByIds',
+            groups__pb2.AlertSettingsGroupsListByAuthorIdRequest.SerializeToString,
+            groups__pb2.AlertSettingsGroupsListByAuthorIdResponse.FromString,
             options,
             channel_credentials,
             insecure,

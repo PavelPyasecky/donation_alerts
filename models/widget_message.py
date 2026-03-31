@@ -17,6 +17,11 @@ class WidgetMessageTypes(Enum):
     update = "update"
 
 
+class ConnectedGroupsInfo(BaseModel):
+    groups: list[AlertSettingsGroup]
+    connected_groups_ids: list[int]
+
+
 class WidgetMessage(BaseModel):
     type_: WidgetMessageTypes = Field(alias="type")
     action: str
@@ -28,6 +33,7 @@ class WidgetMessage(BaseModel):
         | AlertStatus
         | WidgetStatus
         | list[Alert]
+        | ConnectedGroupsInfo
         | BanWord
         | StatisticWidgetSettings
         | list[Donater]
@@ -57,17 +63,21 @@ class WidgetMessage(BaseModel):
         return cls(type=WidgetMessageTypes.update, action="ban_words", data=ban_words)
 
     @classmethod
+    def make_connected_groups_info_message(cls, connected_groups_info: ConnectedGroupsInfo):
+        return cls(type=WidgetMessageTypes.update, action="connected_groups_info", data=connected_groups_info)
+
+    @classmethod
     def make_statistic_widget_settings_message(cls, statistic_widget_settings: StatisticWidgetSettings):
         return cls(type=WidgetMessageTypes.update, action="statistic_widget_settings", data=statistic_widget_settings)
 
     @classmethod
     def make_union_by_donor_names_list_message(cls, union_by_donor_names_list: list[Donater]):
         return cls(type=WidgetMessageTypes.update, action="union_by_donor_names_list", data=union_by_donor_names_list)
-    
+
     @classmethod
     def make_moderation_settings_message(cls, moderation_settings: ModerationSettings):
         return cls(type=WidgetMessageTypes.update, action="moderation_settings", data=moderation_settings)
-    
+
     @classmethod
     def make_last_donations_list_message(cls, last_donations_list: list[Donation]):
         return cls(type=WidgetMessageTypes.update, action="last_donations_list", data=last_donations_list)
