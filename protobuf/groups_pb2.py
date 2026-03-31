@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 import protobuf.settings_pb2 as settings__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cgroups.proto\x12\x06groups\x1a\x0esettings.proto\"\x81\x01\n\x12\x41lertSettingsGroup\x12\n\n\x02id\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x12\n\nupdated_at\x18\x03 \x01(\t\x12\x0c\n\x04user\x18\x04 \x01(\x03\x12.\n\x0e\x61lert_settings\x18\x05 \x03(\x0b\x32\x16.settings.AlertSetting\"\\\n!AlertSettingsGroupRetrieveRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x10\n\x08group_id\x18\x02 \x01(\x03\x12\x12\n\nupdated_at\x18\x03 \x01(\t2s\n\x1c\x41lertSettingsGroupController\x12S\n\x08Retrieve\x12).groups.AlertSettingsGroupRetrieveRequest\x1a\x1a.groups.AlertSettingsGroup\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cgroups.proto\x12\x06groups\x1a\x0esettings.proto\"\x81\x01\n\x12\x41lertSettingsGroup\x12\n\n\x02id\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\x12\n\nupdated_at\x18\x03 \x01(\t\x12\x0c\n\x04user\x18\x04 \x01(\x03\x12.\n\x0e\x61lert_settings\x18\x05 \x03(\x0b\x32\x16.settings.AlertSetting\"\\\n!AlertSettingsGroupRetrieveRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x10\n\x08group_id\x18\x02 \x01(\x03\x12\x12\n\nupdated_at\x18\x03 \x01(\t\"d\n(AlertSettingsGroupsListByAuthorIdRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x11\n\tgroup_ids\x18\x02 \x03(\x03\x12\x12\n\nupdated_at\x18\x03 \x01(\t\"W\n)AlertSettingsGroupsListByAuthorIdResponse\x12*\n\x06groups\x18\x01 \x03(\x0b\x32\x1a.groups.AlertSettingsGroup2\xe7\x01\n\x1c\x41lertSettingsGroupController\x12S\n\x08Retrieve\x12).groups.AlertSettingsGroupRetrieveRequest\x1a\x1a.groups.AlertSettingsGroup\"\x00\x12r\n\tListByIds\x12\x30.groups.AlertSettingsGroupsListByAuthorIdRequest\x1a\x31.groups.AlertSettingsGroupsListByAuthorIdResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,6 +36,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ALERTSETTINGSGROUP']._serialized_end=170
   _globals['_ALERTSETTINGSGROUPRETRIEVEREQUEST']._serialized_start=172
   _globals['_ALERTSETTINGSGROUPRETRIEVEREQUEST']._serialized_end=264
-  _globals['_ALERTSETTINGSGROUPCONTROLLER']._serialized_start=266
-  _globals['_ALERTSETTINGSGROUPCONTROLLER']._serialized_end=381
+  _globals['_ALERTSETTINGSGROUPSLISTBYAUTHORIDREQUEST']._serialized_start=266
+  _globals['_ALERTSETTINGSGROUPSLISTBYAUTHORIDREQUEST']._serialized_end=366
+  _globals['_ALERTSETTINGSGROUPSLISTBYAUTHORIDRESPONSE']._serialized_start=368
+  _globals['_ALERTSETTINGSGROUPSLISTBYAUTHORIDRESPONSE']._serialized_end=455
+  _globals['_ALERTSETTINGSGROUPCONTROLLER']._serialized_start=458
+  _globals['_ALERTSETTINGSGROUPCONTROLLER']._serialized_end=689
 # @@protoc_insertion_point(module_scope)

@@ -13,7 +13,12 @@ from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
 from campaigns.websocket import ws_campaigns_manager
-from alerts.grpc import alert_settings_group_grpc_client, alerts_grpc_client, ban_words_grpc_client, moderation_settings_grpc_client
+from alerts.grpc import (
+    alert_settings_group_grpc_client,
+    alerts_grpc_client,
+    ban_words_grpc_client,
+    moderation_settings_grpc_client,
+)
 from campaigns.grpc import campaign_grpc_client
 from configs import config
 from models.widget_message import WidgetMessage
@@ -36,6 +41,7 @@ async def websocket_alert_endpoint(
     get_ban_words: bool = False,
     get_moderation_settings: bool = False,
     statistic_widget_setting_id: int = None,
+    get_connected_groups_info: bool = False,
 ):
     key = widget_token_info.author_id
 
@@ -43,6 +49,7 @@ async def websocket_alert_endpoint(
 
     async def _stop_key_tasks():
         await alert_task_manager.stop_single_async_task((key, -1))
+        await alert_task_manager.stop_single_async_task((key, "connected_groups_info"))
 
     ws_alerts_manager.register_on_empty(key, _stop_key_tasks)
 
@@ -59,10 +66,12 @@ async def websocket_alert_endpoint(
 
         group_key = (key, group_id)
         await ws_alerts_manager.add_connection(group_key, websocket)
+        await ws_alerts_manager.mark_group_widget_connected(widget_token_info.author_id, group_id)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
         async def _stop_group_tasks():
             await alert_task_manager.stop_single_async_task(group_key)
+            await ws_alerts_manager.mark_group_widget_disconnected(widget_token_info.author_id, group_id)
 
         ws_alerts_manager.register_on_empty(group_key, _stop_group_tasks)
 
@@ -85,11 +94,12 @@ async def websocket_alert_endpoint(
             await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
         ban_words_key = (key, "check_ban_words")
+        await ws_alerts_manager.add_connection(ban_words_key, websocket)
         await alert_task_manager.start_single_schedule_task(
             ban_words_key,
             config.CHECK_NEW_BAN_WORDS_INTERVAL,
             ws_alerts_manager.broadcast_ban_words,
-            key,
+            ban_words_key,
             widget_token_info.author_id,
             [ban_words_updated_at],
         )
@@ -101,8 +111,10 @@ async def websocket_alert_endpoint(
 
     if get_moderation_settings:
         moderation_settings_updated_at = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
-        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(widget_token_info.author_id, moderation_settings_updated_at)
-        
+        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(
+            widget_token_info.author_id, moderation_settings_updated_at
+        )
+
         moderation_settings_key = (key, "check_moderation_settings")
         if moderation_settings is not None:
             moderation_settings_updated_at = moderation_settings.updated_at
@@ -128,14 +140,35 @@ async def websocket_alert_endpoint(
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
         message = WidgetMessage.make_pending_alerts_message(pending_donations)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-    
+
+    if get_connected_groups_info:
+        connected_groups_info_key = (key, "connected_groups_info")
+        await ws_alerts_manager.add_connection(connected_groups_info_key, websocket)
+        connected_groups_info_updated_at = [datetime.datetime.fromtimestamp(0, datetime.timezone.utc)]
+        await ws_alerts_manager.broadcast_connected_groups_info(
+            connected_groups_info_key, widget_token_info.author_id, connected_groups_info_updated_at
+        )
+        await alert_task_manager.start_single_schedule_task(
+            connected_groups_info_key,
+            config.CHECK_MAX_GROUPS_DURATION_INTERVAL,
+            ws_alerts_manager.broadcast_connected_groups_info,
+            connected_groups_info_key,
+            widget_token_info.author_id,
+            connected_groups_info_updated_at,
+        )
+
+        async def _stop_check_max_groups_duration_tasks():
+            await alert_task_manager.stop_single_async_task(connected_groups_info_key)
+
+        ws_alerts_manager.register_on_empty(connected_groups_info_key, _stop_check_max_groups_duration_tasks)
+
     if statistic_widget_setting_id:
         statistic_widget_settings = await top_donaters_grpc_client.get_statistic_widget_settings(
             widget_token_info.author_id, statistic_widget_setting_id
         )
         if not statistic_widget_settings or statistic_widget_settings.user != widget_token_info.author_id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "statistic widget settings not found")
-        
+
         message = WidgetMessage.make_statistic_widget_settings_message(statistic_widget_settings)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
@@ -203,9 +236,7 @@ async def websocket_top_donaters_endpoint(
     widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
 ):
     author_id = widget_token_info.author_id
-    statistic_widget_settings = await top_donaters_grpc_client.get_statistic_widget_settings(
-        author_id, setting_id
-    )
+    statistic_widget_settings = await top_donaters_grpc_client.get_statistic_widget_settings(author_id, setting_id)
     if not statistic_widget_settings or statistic_widget_settings.user != author_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "statistic widget settings not found")
 
@@ -247,7 +278,9 @@ async def websocket_top_donaters_endpoint(
     message = WidgetMessage.make_union_by_donor_names_list_message(union_by_donor_names_list)
     await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
-    await ws_top_donaters_manager.seed_cache_if_empty(author_id, statistic_widget_settings.period, union_by_donor_names_list)
+    await ws_top_donaters_manager.seed_cache_if_empty(
+        author_id, statistic_widget_settings.period, union_by_donor_names_list
+    )
 
     _exchange, queue = await rabbitmq.declare_queue(
         config.ALERTS_EXCHANGE,

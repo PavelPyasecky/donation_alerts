@@ -11,7 +11,7 @@ from protobuf.moderation_settings_pb2 import RetrieveModerationSettingRequest
 from protobuf.moderation_settings_pb2_grpc import ModerationSettingsServiceStub
 from protobuf.settings_pb2 import GetSettingRequest
 from protobuf.settings_pb2_grpc import SettingsServiceStub
-from protobuf.groups_pb2 import AlertSettingsGroupRetrieveRequest
+from protobuf.groups_pb2 import AlertSettingsGroupRetrieveRequest, AlertSettingsGroupsListByAuthorIdRequest
 from protobuf.groups_pb2_grpc import AlertSettingsGroupControllerStub
 from protobuf.pending_donations_pb2 import GetPendingDonationsRequest
 from protobuf.pending_donations_pb2_grpc import PendingDonationsServiceStub
@@ -35,6 +35,20 @@ class AlertSettingsGroupGRPCClient(GRPCClient):
             return None
         return AlertSettingsGroup(**data)
 
+    @handle_grpc_errors
+    async def get_alert_settings_groups(
+        self, author_id: int, group_ids: list[int], updated_at: datetime.datetime
+    ) -> list[AlertSettingsGroup]:
+        if not group_ids:
+            return []
+        stub = await self.stub.ListByIds(
+            AlertSettingsGroupsListByAuthorIdRequest(author_id=author_id, group_ids=group_ids, updated_at=str(updated_at))
+        )
+        data = MessageToDict(stub, preserving_proto_field_name=True)
+        if not data:
+            return []
+        return [AlertSettingsGroup(**obj) for obj in data.get("groups", [])]
+
 
 class AlertSettingsGRPCClient(GRPCClient):
     def __init__(self, *args, **kwargs):
@@ -56,7 +70,7 @@ class AlertSGRPCClient(GRPCClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stub = PendingDonationsServiceStub(self.channel)
-    
+
     @handle_grpc_errors
     async def get_pending_donations(self, author_id: int, limit: int = 0) -> list[Alert]:
         stub = await self.stub.GetPendingDonations(GetPendingDonationsRequest(author_id=author_id))
@@ -68,10 +82,12 @@ class BanWordsGRPCClient(GRPCClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stub = BanWordsServiceStub(self.channel)
-    
+
     @handle_grpc_errors
     async def get_ban_words(self, author_id: int, updated_at: datetime.datetime) -> BanWord | None:
-        stub = await self.stub.RetrieveBanWords(RetrieveBanWordsRequest(author_id=author_id, updated_at=str(updated_at)))
+        stub = await self.stub.RetrieveBanWords(
+            RetrieveBanWordsRequest(author_id=author_id, updated_at=str(updated_at))
+        )
         data = MessageToDict(stub, preserving_proto_field_name=True)
         if not data:
             return None
@@ -82,10 +98,12 @@ class ModerationSettingsGRPCClient(GRPCClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stub = ModerationSettingsServiceStub(self.channel)
-    
+
     @handle_grpc_errors
     async def get_moderation_settings(self, author_id: int, updated_at: datetime.datetime) -> ModerationSettings:
-        stub = await self.stub.RetrieveModerationSetting(RetrieveModerationSettingRequest(author_id=author_id, updated_at=str(updated_at)))
+        stub = await self.stub.RetrieveModerationSetting(
+            RetrieveModerationSettingRequest(author_id=author_id, updated_at=str(updated_at))
+        )
         data = MessageToDict(stub, preserving_proto_field_name=True)
         if not data:
             return None
