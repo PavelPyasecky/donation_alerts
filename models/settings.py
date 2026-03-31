@@ -11,7 +11,7 @@ class StatisticWidgetSettings(BaseModel):
     elements_count: int
     view_type: str
     string_template: str
-    
+
     font: str
     color: str
     style: str

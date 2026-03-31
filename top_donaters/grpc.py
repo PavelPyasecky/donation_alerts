@@ -38,7 +38,9 @@ class DonationsGRPCClient(GRPCClient):
         self, author_id: int, start_time: datetime.datetime, end_time: datetime.datetime, limit: int
     ) -> list[Donater]:
         stub = await self.stub.UnionByDonorNamesList(
-            UnionByDonorNamesListRequest(author_id=author_id, start_time=str(start_time), end_time=str(end_time), limit=limit)
+            UnionByDonorNamesListRequest(
+                author_id=author_id, start_time=str(start_time), end_time=str(end_time), limit=limit
+            )
         )
         data = MessageToDict(stub, preserving_proto_field_name=True)
         if not data:
@@ -47,9 +49,7 @@ class DonationsGRPCClient(GRPCClient):
 
     @handle_grpc_errors
     async def get_last_donations_list(self, author_id: int, limit: int) -> list[Donation]:
-        stub = await self.stub.LastDonationsList(
-            LastDonationsListRequest(author_id=author_id, limit=limit)
-        )
+        stub = await self.stub.LastDonationsList(LastDonationsListRequest(author_id=author_id, limit=limit))
         data = MessageToDict(stub, preserving_proto_field_name=True)
         if not data:
             return []

@@ -3,8 +3,19 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 
-from alerts.grpc import alert_settings_group_grpc_client, alert_settings_grpc_client, ban_words_grpc_client, moderation_settings_grpc_client
-from alerts.services import get_connected_groups, mark_streamer_group_connected, mark_streamer_group_disconnected, mark_streamer_offline, mark_streamer_online
+from alerts.grpc import (
+    alert_settings_group_grpc_client,
+    alert_settings_grpc_client,
+    ban_words_grpc_client,
+    moderation_settings_grpc_client,
+)
+from alerts.services import (
+    get_connected_groups,
+    mark_streamer_group_connected,
+    mark_streamer_group_disconnected,
+    mark_streamer_offline,
+    mark_streamer_online,
+)
 from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
 from utils.websocket_manager import WSManager
 
@@ -43,15 +54,17 @@ class AlertsWSManager(WSManager):
             return False
 
         connected_groups_ids = await get_connected_groups(author_id)
-        groups = await alert_settings_group_grpc_client.get_alert_settings_groups(author_id, connected_groups_ids, updated_at[0])
+        groups = await alert_settings_group_grpc_client.get_alert_settings_groups(
+            author_id, connected_groups_ids, updated_at[0]
+        )
 
         updated_at[0] = datetime.datetime.now(datetime.timezone.utc)
-        
+
         connected_groups_info = ConnectedGroupsInfo(groups=groups, connected_groups_ids=connected_groups_ids)
         message = WidgetMessage.make_connected_groups_info_message(connected_groups_info)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
-    
+
     async def broadcast_ban_words(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
         ban_words = await ban_words_grpc_client.get_ban_words(author_id, updated_at[0])
         if ban_words is None:
@@ -86,7 +99,7 @@ class AlertsWSManager(WSManager):
                                 author_id, message_model.data.setting
                             )
                             message_model.data.setting = alert_setting
-                            
+
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True
 

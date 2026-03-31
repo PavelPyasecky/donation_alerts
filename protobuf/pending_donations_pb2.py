@@ -4,39 +4,34 @@
 # source: pending_donations.proto
 # Protobuf Python Version: 6.31.1
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
-_runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    31,
-    1,
-    '',
-    'pending_donations.proto'
-)
+
+_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 6, 31, 1, "", "pending_donations.proto")
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17pending_donations.proto\x12\x06\x61lerts\"/\n\x1aGetPendingDonationsRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\"H\n\x18PendingDonationsResponse\x12,\n\x11pending_donations\x18\x01 \x03(\x0b\x32\x11.alerts.AlertData\"\x96\x01\n\tAlertData\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x11\n\tauthor_id\x18\x02 \x01(\x03\x12\x13\n\x0b\x64onation_id\x18\x03 \x01(\x03\x12\x0e\n\x06\x61mount\x18\x04 \x01(\t\x12\x0f\n\x07message\x18\x05 \x01(\t\x12\x12\n\ndonor_name\x18\x06 \x01(\t\x12\r\n\x05voice\x18\x07 \x01(\t\x12\x11\n\ttimestamp\x18\x08 \x01(\t2x\n\x17PendingDonationsService\x12]\n\x13GetPendingDonations\x12\".alerts.GetPendingDonationsRequest\x1a .alerts.PendingDonationsResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x17pending_donations.proto\x12\x06\x61lerts"/\n\x1aGetPendingDonationsRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03"H\n\x18PendingDonationsResponse\x12,\n\x11pending_donations\x18\x01 \x03(\x0b\x32\x11.alerts.AlertData"\x96\x01\n\tAlertData\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x11\n\tauthor_id\x18\x02 \x01(\x03\x12\x13\n\x0b\x64onation_id\x18\x03 \x01(\x03\x12\x0e\n\x06\x61mount\x18\x04 \x01(\t\x12\x0f\n\x07message\x18\x05 \x01(\t\x12\x12\n\ndonor_name\x18\x06 \x01(\t\x12\r\n\x05voice\x18\x07 \x01(\t\x12\x11\n\ttimestamp\x18\x08 \x01(\t2x\n\x17PendingDonationsService\x12]\n\x13GetPendingDonations\x12".alerts.GetPendingDonationsRequest\x1a .alerts.PendingDonationsResponse"\x00\x62\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'pending_donations_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "pending_donations_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_GETPENDINGDONATIONSREQUEST']._serialized_start=35
-  _globals['_GETPENDINGDONATIONSREQUEST']._serialized_end=82
-  _globals['_PENDINGDONATIONSRESPONSE']._serialized_start=84
-  _globals['_PENDINGDONATIONSRESPONSE']._serialized_end=156
-  _globals['_ALERTDATA']._serialized_start=159
-  _globals['_ALERTDATA']._serialized_end=309
-  _globals['_PENDINGDONATIONSSERVICE']._serialized_start=311
-  _globals['_PENDINGDONATIONSSERVICE']._serialized_end=431
+    DESCRIPTOR._loaded_options = None
+    _globals["_GETPENDINGDONATIONSREQUEST"]._serialized_start = 35
+    _globals["_GETPENDINGDONATIONSREQUEST"]._serialized_end = 82
+    _globals["_PENDINGDONATIONSRESPONSE"]._serialized_start = 84
+    _globals["_PENDINGDONATIONSRESPONSE"]._serialized_end = 156
+    _globals["_ALERTDATA"]._serialized_start = 159
+    _globals["_ALERTDATA"]._serialized_end = 309
+    _globals["_PENDINGDONATIONSSERVICE"]._serialized_start = 311
+    _globals["_PENDINGDONATIONSSERVICE"]._serialized_end = 431
 # @@protoc_insertion_point(module_scope)

@@ -19,7 +19,14 @@ class AlertSettingsGroup(_message.Message):
     updated_at: str
     user: int
     alert_settings: _containers.RepeatedCompositeFieldContainer[_settings_pb2.AlertSetting]
-    def __init__(self, id: _Optional[int] = ..., title: _Optional[str] = ..., updated_at: _Optional[str] = ..., user: _Optional[int] = ..., alert_settings: _Optional[_Iterable[_Union[_settings_pb2.AlertSetting, _Mapping]]] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        title: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+        user: _Optional[int] = ...,
+        alert_settings: _Optional[_Iterable[_Union[_settings_pb2.AlertSetting, _Mapping]]] = ...,
+    ) -> None: ...
 
 class AlertSettingsGroupRetrieveRequest(_message.Message):
     __slots__ = ("author_id", "group_id", "updated_at")
@@ -29,7 +36,9 @@ class AlertSettingsGroupRetrieveRequest(_message.Message):
     author_id: int
     group_id: int
     updated_at: str
-    def __init__(self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, author_id: _Optional[int] = ..., group_id: _Optional[int] = ..., updated_at: _Optional[str] = ...
+    ) -> None: ...
 
 class AlertSettingsGroupsListByAuthorIdRequest(_message.Message):
     __slots__ = ("author_id", "group_ids", "updated_at")
@@ -39,7 +48,12 @@ class AlertSettingsGroupsListByAuthorIdRequest(_message.Message):
     author_id: int
     group_ids: _containers.RepeatedScalarFieldContainer[int]
     updated_at: str
-    def __init__(self, author_id: _Optional[int] = ..., group_ids: _Optional[_Iterable[int]] = ..., updated_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        author_id: _Optional[int] = ...,
+        group_ids: _Optional[_Iterable[int]] = ...,
+        updated_at: _Optional[str] = ...,
+    ) -> None: ...
 
 class AlertSettingsGroupsListByAuthorIdResponse(_message.Message):
     __slots__ = ("groups",)

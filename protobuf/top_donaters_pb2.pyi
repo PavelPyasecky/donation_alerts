@@ -13,7 +13,29 @@ class RetrieveStatisticWidgetSettingsRequest(_message.Message):
     def __init__(self, author_id: _Optional[int] = ..., setting_id: _Optional[int] = ...) -> None: ...
 
 class StatisticWidgetSettings(_message.Message):
-    __slots__ = ("id", "user", "type", "title", "period", "elements_count", "view_type", "string_template", "created_at", "updated_at", "font", "color", "style", "font_align", "font_size", "shadow_color", "shadow_horizontal_offset", "shadow_vertical_offset", "shadow_blur", "contour_color", "contour_width")
+    __slots__ = (
+        "id",
+        "user",
+        "type",
+        "title",
+        "period",
+        "elements_count",
+        "view_type",
+        "string_template",
+        "created_at",
+        "updated_at",
+        "font",
+        "color",
+        "style",
+        "font_align",
+        "font_size",
+        "shadow_color",
+        "shadow_horizontal_offset",
+        "shadow_vertical_offset",
+        "shadow_blur",
+        "contour_color",
+        "contour_width",
+    )
     ID_FIELD_NUMBER: _ClassVar[int]
     USER_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -56,4 +78,27 @@ class StatisticWidgetSettings(_message.Message):
     shadow_blur: int
     contour_color: str
     contour_width: int
-    def __init__(self, id: _Optional[int] = ..., user: _Optional[int] = ..., type: _Optional[str] = ..., title: _Optional[str] = ..., period: _Optional[str] = ..., elements_count: _Optional[int] = ..., view_type: _Optional[str] = ..., string_template: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ..., font: _Optional[str] = ..., color: _Optional[str] = ..., style: _Optional[str] = ..., font_align: _Optional[str] = ..., font_size: _Optional[int] = ..., shadow_color: _Optional[str] = ..., shadow_horizontal_offset: _Optional[int] = ..., shadow_vertical_offset: _Optional[int] = ..., shadow_blur: _Optional[int] = ..., contour_color: _Optional[str] = ..., contour_width: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        user: _Optional[int] = ...,
+        type: _Optional[str] = ...,
+        title: _Optional[str] = ...,
+        period: _Optional[str] = ...,
+        elements_count: _Optional[int] = ...,
+        view_type: _Optional[str] = ...,
+        string_template: _Optional[str] = ...,
+        created_at: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+        font: _Optional[str] = ...,
+        color: _Optional[str] = ...,
+        style: _Optional[str] = ...,
+        font_align: _Optional[str] = ...,
+        font_size: _Optional[int] = ...,
+        shadow_color: _Optional[str] = ...,
+        shadow_horizontal_offset: _Optional[int] = ...,
+        shadow_vertical_offset: _Optional[int] = ...,
+        shadow_blur: _Optional[int] = ...,
+        contour_color: _Optional[str] = ...,
+        contour_width: _Optional[int] = ...,
+    ) -> None: ...
