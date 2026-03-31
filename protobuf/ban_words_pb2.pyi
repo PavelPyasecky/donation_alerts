@@ -24,4 +24,11 @@ class BanWords(_message.Message):
     words: str
     created_at: str
     updated_at: str
-    def __init__(self, id: _Optional[int] = ..., is_active: bool = ..., words: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        is_active: bool = ...,
+        words: _Optional[str] = ...,
+        created_at: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+    ) -> None: ...

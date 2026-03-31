@@ -36,4 +36,14 @@ class AlertData(_message.Message):
     donor_name: str
     voice: str
     timestamp: str
-    def __init__(self, id: _Optional[int] = ..., author_id: _Optional[int] = ..., donation_id: _Optional[int] = ..., amount: _Optional[str] = ..., message: _Optional[str] = ..., donor_name: _Optional[str] = ..., voice: _Optional[str] = ..., timestamp: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        author_id: _Optional[int] = ...,
+        donation_id: _Optional[int] = ...,
+        amount: _Optional[str] = ...,
+        message: _Optional[str] = ...,
+        donor_name: _Optional[str] = ...,
+        voice: _Optional[str] = ...,
+        timestamp: _Optional[str] = ...,
+    ) -> None: ...

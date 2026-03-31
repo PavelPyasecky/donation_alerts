@@ -9,7 +9,6 @@ from configs.redis import get_user_state_redis_conn
 from configs import config
 from utils.task_manager import TaskManager
 
-
 logger = logging.getLogger(__name__)
 
 

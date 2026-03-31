@@ -42,7 +42,9 @@ class AlertSettingsGroupGRPCClient(GRPCClient):
         if not group_ids:
             return []
         stub = await self.stub.ListByIds(
-            AlertSettingsGroupsListByAuthorIdRequest(author_id=author_id, group_ids=group_ids, updated_at=str(updated_at))
+            AlertSettingsGroupsListByAuthorIdRequest(
+                author_id=author_id, group_ids=group_ids, updated_at=str(updated_at)
+            )
         )
         data = MessageToDict(stub, preserving_proto_field_name=True)
         if not data:

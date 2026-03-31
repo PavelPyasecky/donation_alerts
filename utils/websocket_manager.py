@@ -14,7 +14,7 @@ class WSManager:
         self._on_empty_callbacks: dict[any, list[callable]] = {}
         self._cleanup_task: asyncio.Task | None = None
         self.start_cleanup_loop(config.CLEAN_UP_TASKS_INTERVAL)
-    
+
     async def add_connection(self, key: any, websocket: WebSocket):
         async with self.lock:
             if key not in self.connections:

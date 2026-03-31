@@ -57,9 +57,7 @@ class TopDonatersCache:
             await self.evict_old(author_id, period, timestamp - window_seconds)
 
         amount_float = float(donation.amount)
-        donation_payload = json.dumps(
-            {"donor": donation.donor_name, "amount": str(donation.amount)}, ensure_ascii=True
-        )
+        donation_payload = json.dumps({"donor": donation.donor_name, "amount": str(donation.amount)}, ensure_ascii=True)
 
         pipe = self.redis.pipeline()
         pipe.zadd(keys["time"], {donation.donation_id: timestamp})

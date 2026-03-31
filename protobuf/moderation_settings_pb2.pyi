@@ -26,4 +26,12 @@ class ModerationSetting(_message.Message):
     activation_amount: str
     created_at: str
     updated_at: str
-    def __init__(self, id: _Optional[int] = ..., is_active: bool = ..., duration: _Optional[int] = ..., activation_amount: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        is_active: bool = ...,
+        duration: _Optional[int] = ...,
+        activation_amount: _Optional[str] = ...,
+        created_at: _Optional[str] = ...,
+        updated_at: _Optional[str] = ...,
+    ) -> None: ...
