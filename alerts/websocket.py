@@ -15,6 +15,7 @@ from alerts.services import (
     mark_streamer_group_disconnected,
     mark_streamer_offline,
     mark_streamer_online,
+    refresh_streamer_presence_ttl,
 )
 from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
 from utils.websocket_manager import WSManager
@@ -37,6 +38,8 @@ class AlertsWSManager(WSManager):
         if not self.is_author_connected(ws_key):
             return False
 
+        await refresh_streamer_presence_ttl(author_id)
+
         alert_settings_group = await alert_settings_group_grpc_client.get_alert_settings_group_filter_updated_at(
             author_id, group_id, updated_at[0]
         )
@@ -52,6 +55,8 @@ class AlertsWSManager(WSManager):
     async def broadcast_connected_groups_info(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
         if not self.is_author_connected(ws_key):
             return False
+
+        await refresh_streamer_presence_ttl(author_id)
 
         connected_groups_ids = await get_connected_groups(author_id)
         groups = await alert_settings_group_grpc_client.get_alert_settings_groups(
