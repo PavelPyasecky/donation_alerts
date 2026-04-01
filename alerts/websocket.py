@@ -9,6 +9,7 @@ from alerts.grpc import (
     ban_words_grpc_client,
     moderation_settings_grpc_client,
 )
+from alerts.poll_state import ConnectedGroupsPollState, TimestampPollState
 from alerts.services import (
     get_connected_groups,
     mark_streamer_group_connected,
@@ -33,7 +34,7 @@ class AlertsWSManager(WSManager):
             await mark_streamer_offline(author_id)
 
     async def broadcast_alerts_group(
-        self, ws_key: any, author_id: int, group_id: int, updated_at: list[datetime.datetime]
+        self, ws_key: any, author_id: int, group_id: int, poll: TimestampPollState
     ):
         if not self.is_author_connected(ws_key):
             return False
@@ -41,49 +42,54 @@ class AlertsWSManager(WSManager):
         await refresh_streamer_presence_ttl(author_id)
 
         alert_settings_group = await alert_settings_group_grpc_client.get_alert_settings_group_filter_updated_at(
-            author_id, group_id, updated_at[0]
+            author_id, group_id, poll.updated_at
         )
         if alert_settings_group is None:
             return True
 
-        updated_at[0] = alert_settings_group.updated_at
+        poll.updated_at = alert_settings_group.updated_at
 
         message = WidgetMessage.make_alert_settings_group_message(alert_settings_group)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
-    async def broadcast_connected_groups_info(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
+    async def broadcast_connected_groups_info(self, ws_key: any, author_id: int, poll: ConnectedGroupsPollState):
         if not self.is_author_connected(ws_key):
             return False
 
         await refresh_streamer_presence_ttl(author_id)
 
-        connected_groups_ids = await get_connected_groups(author_id)
+        old_connected_groups_ids = poll.connected_group_ids
+        poll.connected_group_ids = await get_connected_groups(author_id)
         groups = await alert_settings_group_grpc_client.get_alert_settings_groups(
-            author_id, connected_groups_ids, updated_at[0]
+            author_id,
+            poll.connected_group_ids,
+            poll.updated_at
+            if old_connected_groups_ids == poll.connected_group_ids
+            else datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
         )
 
-        updated_at[0] = datetime.datetime.now(datetime.timezone.utc)
+        poll.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
-        connected_groups_info = ConnectedGroupsInfo(groups=groups, connected_groups_ids=connected_groups_ids)
+        connected_groups_info = ConnectedGroupsInfo(groups=groups, connected_groups_ids=poll.connected_group_ids)
         message = WidgetMessage.make_connected_groups_info_message(connected_groups_info)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
-    async def broadcast_ban_words(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
-        ban_words = await ban_words_grpc_client.get_ban_words(author_id, updated_at[0])
+    async def broadcast_ban_words(self, ws_key: any, author_id: int, poll: TimestampPollState):
+        ban_words = await ban_words_grpc_client.get_ban_words(author_id, poll.updated_at)
         if ban_words is None:
             return True
-        updated_at[0] = ban_words.updated_at
+        poll.updated_at = ban_words.updated_at
         message = WidgetMessage.make_ban_words_message(ban_words)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
-    async def broadcast_moderation_settings(self, ws_key: any, author_id: int, updated_at: list[datetime.datetime]):
-        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(author_id, updated_at[0])
+    async def broadcast_moderation_settings(self, ws_key: any, author_id: int, poll: TimestampPollState):
+        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(author_id, poll.updated_at)
         if moderation_settings is None:
             return True
-        updated_at[0] = moderation_settings.updated_at
+        poll.updated_at = moderation_settings.updated_at
         message = WidgetMessage.make_moderation_settings_message(moderation_settings)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True

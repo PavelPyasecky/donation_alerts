@@ -9,6 +9,7 @@ from fastapi import (
     WebSocketException,
 )
 
+from alerts.poll_state import ConnectedGroupsPollState, TimestampPollState
 from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
@@ -82,7 +83,7 @@ async def websocket_alert_endpoint(
             group_key,
             widget_token_info.author_id,
             group_id,
-            [alert_settings_group.updated_at],
+            TimestampPollState(updated_at=alert_settings_group.updated_at),
         )
 
     if get_ban_words:
@@ -101,7 +102,7 @@ async def websocket_alert_endpoint(
             ws_alerts_manager.broadcast_ban_words,
             ban_words_key,
             widget_token_info.author_id,
-            [ban_words_updated_at],
+            TimestampPollState(updated_at=ban_words_updated_at),
         )
 
         async def _stop_ban_words_tasks():
@@ -133,7 +134,7 @@ async def websocket_alert_endpoint(
             ws_alerts_manager.broadcast_moderation_settings,
             moderation_settings_key,
             widget_token_info.author_id,
-            [moderation_settings_updated_at],
+            TimestampPollState(updated_at=moderation_settings_updated_at),
         )
 
     if get_pending_donations:
@@ -144,9 +145,9 @@ async def websocket_alert_endpoint(
     if get_connected_groups_info:
         connected_groups_info_key = (key, "connected_groups_info")
         await ws_alerts_manager.add_connection(connected_groups_info_key, websocket)
-        connected_groups_info_updated_at = [datetime.datetime.fromtimestamp(0, datetime.timezone.utc)]
+        connected_groups_poll = ConnectedGroupsPollState()
         await ws_alerts_manager.broadcast_connected_groups_info(
-            connected_groups_info_key, widget_token_info.author_id, connected_groups_info_updated_at
+            connected_groups_info_key, widget_token_info.author_id, connected_groups_poll
         )
         await alert_task_manager.start_single_schedule_task(
             connected_groups_info_key,
@@ -154,7 +155,7 @@ async def websocket_alert_endpoint(
             ws_alerts_manager.broadcast_connected_groups_info,
             connected_groups_info_key,
             widget_token_info.author_id,
-            connected_groups_info_updated_at,
+            connected_groups_poll,
         )
 
         async def _stop_check_max_groups_duration_tasks():
