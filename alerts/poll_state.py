@@ -3,11 +3,6 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class TimestampPollState:
-    updated_at: datetime.datetime
-
-
-@dataclass
 class ConnectedGroupsPollState:
     connected_group_ids: list[int] = field(default_factory=list)
     updated_at: datetime.datetime = field(

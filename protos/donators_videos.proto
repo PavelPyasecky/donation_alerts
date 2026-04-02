@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package donations;
+
+service DonatorsVideosService {
+    rpc ListDonatorsVideos(ListDonatorsVideosRequest) returns (ListDonatorsVideosResponse) {}
+}
+
+message ListDonatorsVideosRequest {
+    int64 author_id = 1;
+    string updated_at = 2;
+}
+
+message ListDonatorsVideosResponse {
+    repeated DonatorVideo videos = 1;
+}
+
+message DonatorVideo {
+    int64 id = 1;
+    string url = 2;
+    string created_at = 3;
+}

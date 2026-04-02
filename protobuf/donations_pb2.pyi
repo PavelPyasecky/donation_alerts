@@ -24,13 +24,7 @@ class Donation(_message.Message):
     donor_name: str
     amount: str
     created_at: str
-    def __init__(
-        self,
-        id: _Optional[int] = ...,
-        donor_name: _Optional[str] = ...,
-        amount: _Optional[str] = ...,
-        created_at: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., donor_name: _Optional[str] = ..., amount: _Optional[str] = ..., created_at: _Optional[str] = ...) -> None: ...
 
 class LastDonationsListResponse(_message.Message):
     __slots__ = ("last_donations",)
@@ -48,21 +42,13 @@ class UnionByDonorNamesListRequest(_message.Message):
     start_time: str
     end_time: str
     limit: int
-    def __init__(
-        self,
-        author_id: _Optional[int] = ...,
-        start_time: _Optional[str] = ...,
-        end_time: _Optional[str] = ...,
-        limit: _Optional[int] = ...,
-    ) -> None: ...
+    def __init__(self, author_id: _Optional[int] = ..., start_time: _Optional[str] = ..., end_time: _Optional[str] = ..., limit: _Optional[int] = ...) -> None: ...
 
 class UnionByDonorNamesDonationsListResponse(_message.Message):
     __slots__ = ("union_by_donor_names_donations",)
     UNION_BY_DONOR_NAMES_DONATIONS_FIELD_NUMBER: _ClassVar[int]
     union_by_donor_names_donations: _containers.RepeatedCompositeFieldContainer[UnionByDonorNamesDonation]
-    def __init__(
-        self, union_by_donor_names_donations: _Optional[_Iterable[_Union[UnionByDonorNamesDonation, _Mapping]]] = ...
-    ) -> None: ...
+    def __init__(self, union_by_donor_names_donations: _Optional[_Iterable[_Union[UnionByDonorNamesDonation, _Mapping]]] = ...) -> None: ...
 
 class UnionByDonorNamesDonation(_message.Message):
     __slots__ = ("donor_name", "total_amount", "total_count", "last_created_at")
@@ -74,10 +60,4 @@ class UnionByDonorNamesDonation(_message.Message):
     total_amount: str
     total_count: int
     last_created_at: str
-    def __init__(
-        self,
-        donor_name: _Optional[str] = ...,
-        total_amount: _Optional[str] = ...,
-        total_count: _Optional[int] = ...,
-        last_created_at: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, donor_name: _Optional[str] = ..., total_amount: _Optional[str] = ..., total_count: _Optional[int] = ..., last_created_at: _Optional[str] = ...) -> None: ...
