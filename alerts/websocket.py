@@ -9,7 +9,7 @@ from alerts.grpc import (
     ban_words_grpc_client,
     moderation_settings_grpc_client,
 )
-from alerts.poll_state import ConnectedGroupsPollState, TimestampPollState
+from alerts.poll_state import ConnectedGroupsPollState
 from alerts.services import (
     get_connected_groups,
     mark_streamer_group_connected,
@@ -19,6 +19,7 @@ from alerts.services import (
     refresh_streamer_presence_ttl,
 )
 from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
+from utils.poll_states import TimestampPollState
 from utils.websocket_manager import WSManager
 
 

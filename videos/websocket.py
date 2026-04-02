@@ -31,7 +31,8 @@ class VideosWSManager(WSManager):
         if widget_videos is None:
             return True
 
-        poll.updated_at = max(video.created_at for video in widget_videos)
+        if widget_videos:
+            poll.updated_at = max(video.created_at for video in widget_videos)
 
         message = WidgetMessage.make_widget_videos_message(widget_videos)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))

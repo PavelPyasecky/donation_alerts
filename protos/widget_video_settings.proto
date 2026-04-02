@@ -18,7 +18,15 @@ message WidgetVideoSettings {
     int32 volume = 4;
     int32 border_radius = 5;
     string when_to_show_video_title = 6;
-    LastViewedWidgetVideo last_viewed_widget_video = 7;
+    string font = 7;
+    string font_color = 8;
+    string font_style = 9;
+    int32 font_size = 10;
+    string border_color = 11;
+    int32 border_width = 12;
+    string created_at = 13;
+    string updated_at = 14;
+    LastViewedWidgetVideo last_viewed_widget_video = 15;
 }
 
 message LastViewedWidgetVideo {

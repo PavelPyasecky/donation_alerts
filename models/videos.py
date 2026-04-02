@@ -22,10 +22,16 @@ class WidgetVideoSetting(BaseModel):
     id: int
     play_randomly: bool = Field(False)
     show_video: bool = Field(False)
-    volume: int
-    border_radius: int
-    when_to_show_video_title: str
-    last_viewed_video: LastViewedVideo
+    volume: int = Field(0)
+    border_radius: int = Field(0)
+    when_to_show_video_title: str = Field(default="")
+    font: str = Field(default="")
+    font_color: str = Field(default="")
+    font_style: str = Field(default="")
+    font_size: int = Field(0)
+    border_color: str = Field(default="")
+    border_width: int = Field(0)
+    last_viewed_widget_video: LastViewedVideo
 
     created_at: datetime.datetime
     updated_at: datetime.datetime

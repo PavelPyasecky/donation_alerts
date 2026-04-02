@@ -48,7 +48,9 @@ class WidgetVideoSettingsGrpcClient(GRPCClient):
 
     @handle_grpc_errors
     async def get_video_settings(self, author_id: int, updated_at: datetime.datetime) -> WidgetVideoSetting:
-        response = await self.stub.RetrieveWidgetVideoSettings(RetrieveWidgetVideoSettingsRequest(author_id=author_id, updated_at=updated_at.isoformat()))
+        response = await self.stub.RetrieveWidgetVideoSettings(
+            RetrieveWidgetVideoSettingsRequest(author_id=author_id, updated_at=updated_at.isoformat())
+        )
         data = MessageToDict(response, preserving_proto_field_name=True)
         if not data:
             return None

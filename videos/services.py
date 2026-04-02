@@ -14,13 +14,8 @@ def get_videos_ws_messages_handler(author_id: int, exchange: AbstractExchange):
             case WidgetMessageTypes.update:
                 match message.action:
                     case "video_status":
-                        video_status = RabbitMQVideoStatus(
-                            author_id=author_id,
-                            video_id=message.data.id,
-                            viewed_at=datetime.datetime.now(datetime.timezone.utc),
-                        )
                         await exchange.publish(
-                            message=Message(body=video_status.model_dump_json().encode()),
+                            message=Message(body=message.data.model_dump_json().encode()),
                             routing_key=config.VIDEO_STATUS_QUEUE,
                         )
 
