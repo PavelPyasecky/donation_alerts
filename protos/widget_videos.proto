@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package settings;
+
+service VideosService {
+    rpc ListWidgetVideos(ListWidgetVideosRequest) returns (ListWidgetVideosResponse) {}
+}
+
+message ListWidgetVideosRequest {
+    int64 author_id = 1;
+    string updated_at = 2;
+}
+
+message ListWidgetVideosResponse {
+    repeated WidgetVideo videos = 1;
+}
+
+message WidgetVideo {
+    int64 id = 1;
+    string url = 2;
+    string created_at = 3;
+}

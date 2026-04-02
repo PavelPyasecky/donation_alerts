@@ -4,40 +4,45 @@
 # source: donations.proto
 # Protobuf Python Version: 6.31.1
 """Generated protocol buffer code."""
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
-
-_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 6, 31, 1, "", "donations.proto")
+_runtime_version.ValidateProtobufRuntimeVersion(
+    _runtime_version.Domain.PUBLIC,
+    6,
+    31,
+    1,
+    '',
+    'donations.proto'
+)
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0f\x64onations.proto\x12\tdonations"<\n\x18LastDonationsListRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\r\n\x05limit\x18\x02 \x01(\x03"N\n\x08\x44onation\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x12\n\ndonor_name\x18\x02 \x01(\t\x12\x0e\n\x06\x61mount\x18\x03 \x01(\t\x12\x12\n\ncreated_at\x18\x04 \x01(\t"H\n\x19LastDonationsListResponse\x12+\n\x0elast_donations\x18\x01 \x03(\x0b\x32\x13.donations.Donation"f\n\x1cUnionByDonorNamesListRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x12\n\nstart_time\x18\x02 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\t\x12\r\n\x05limit\x18\x04 \x01(\x03"v\n&UnionByDonorNamesDonationsListResponse\x12L\n\x1eunion_by_donor_names_donations\x18\x01 \x03(\x0b\x32$.donations.UnionByDonorNamesDonation"s\n\x19UnionByDonorNamesDonation\x12\x12\n\ndonor_name\x18\x01 \x01(\t\x12\x14\n\x0ctotal_amount\x18\x02 \x01(\t\x12\x13\n\x0btotal_count\x18\x03 \x01(\x03\x12\x17\n\x0flast_created_at\x18\x04 \x01(\t2\xea\x01\n\x0f\x44onationService\x12u\n\x15UnionByDonorNamesList\x12\'.donations.UnionByDonorNamesListRequest\x1a\x31.donations.UnionByDonorNamesDonationsListResponse"\x00\x12`\n\x11LastDonationsList\x12#.donations.LastDonationsListRequest\x1a$.donations.LastDonationsListResponse"\x00\x62\x06proto3'
-)
+
+
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x64onations.proto\x12\tdonations\"<\n\x18LastDonationsListRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\r\n\x05limit\x18\x02 \x01(\x03\"N\n\x08\x44onation\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x12\n\ndonor_name\x18\x02 \x01(\t\x12\x0e\n\x06\x61mount\x18\x03 \x01(\t\x12\x12\n\ncreated_at\x18\x04 \x01(\t\"H\n\x19LastDonationsListResponse\x12+\n\x0elast_donations\x18\x01 \x03(\x0b\x32\x13.donations.Donation\"f\n\x1cUnionByDonorNamesListRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x12\n\nstart_time\x18\x02 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\t\x12\r\n\x05limit\x18\x04 \x01(\x03\"v\n&UnionByDonorNamesDonationsListResponse\x12L\n\x1eunion_by_donor_names_donations\x18\x01 \x03(\x0b\x32$.donations.UnionByDonorNamesDonation\"s\n\x19UnionByDonorNamesDonation\x12\x12\n\ndonor_name\x18\x01 \x01(\t\x12\x14\n\x0ctotal_amount\x18\x02 \x01(\t\x12\x13\n\x0btotal_count\x18\x03 \x01(\x03\x12\x17\n\x0flast_created_at\x18\x04 \x01(\t2\xea\x01\n\x0f\x44onationService\x12u\n\x15UnionByDonorNamesList\x12\'.donations.UnionByDonorNamesListRequest\x1a\x31.donations.UnionByDonorNamesDonationsListResponse\"\x00\x12`\n\x11LastDonationsList\x12#.donations.LastDonationsListRequest\x1a$.donations.LastDonationsListResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "donations_pb2", _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'donations_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-    DESCRIPTOR._loaded_options = None
-    _globals["_LASTDONATIONSLISTREQUEST"]._serialized_start = 30
-    _globals["_LASTDONATIONSLISTREQUEST"]._serialized_end = 90
-    _globals["_DONATION"]._serialized_start = 92
-    _globals["_DONATION"]._serialized_end = 170
-    _globals["_LASTDONATIONSLISTRESPONSE"]._serialized_start = 172
-    _globals["_LASTDONATIONSLISTRESPONSE"]._serialized_end = 244
-    _globals["_UNIONBYDONORNAMESLISTREQUEST"]._serialized_start = 246
-    _globals["_UNIONBYDONORNAMESLISTREQUEST"]._serialized_end = 348
-    _globals["_UNIONBYDONORNAMESDONATIONSLISTRESPONSE"]._serialized_start = 350
-    _globals["_UNIONBYDONORNAMESDONATIONSLISTRESPONSE"]._serialized_end = 468
-    _globals["_UNIONBYDONORNAMESDONATION"]._serialized_start = 470
-    _globals["_UNIONBYDONORNAMESDONATION"]._serialized_end = 585
-    _globals["_DONATIONSERVICE"]._serialized_start = 588
-    _globals["_DONATIONSERVICE"]._serialized_end = 822
+  DESCRIPTOR._loaded_options = None
+  _globals['_LASTDONATIONSLISTREQUEST']._serialized_start=30
+  _globals['_LASTDONATIONSLISTREQUEST']._serialized_end=90
+  _globals['_DONATION']._serialized_start=92
+  _globals['_DONATION']._serialized_end=170
+  _globals['_LASTDONATIONSLISTRESPONSE']._serialized_start=172
+  _globals['_LASTDONATIONSLISTRESPONSE']._serialized_end=244
+  _globals['_UNIONBYDONORNAMESLISTREQUEST']._serialized_start=246
+  _globals['_UNIONBYDONORNAMESLISTREQUEST']._serialized_end=348
+  _globals['_UNIONBYDONORNAMESDONATIONSLISTRESPONSE']._serialized_start=350
+  _globals['_UNIONBYDONORNAMESDONATIONSLISTRESPONSE']._serialized_end=468
+  _globals['_UNIONBYDONORNAMESDONATION']._serialized_start=470
+  _globals['_UNIONBYDONORNAMESDONATION']._serialized_end=585
+  _globals['_DONATIONSERVICE']._serialized_start=588
+  _globals['_DONATIONSERVICE']._serialized_end=822
 # @@protoc_insertion_point(module_scope)

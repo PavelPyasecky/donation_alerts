@@ -9,7 +9,8 @@ from fastapi import (
     WebSocketException,
 )
 
-from alerts.poll_state import ConnectedGroupsPollState, TimestampPollState
+from alerts.poll_state import ConnectedGroupsPollState
+from utils.poll_states import TimestampPollState
 from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
@@ -29,6 +30,9 @@ from top_donaters.grpc import donations_grpc_client, top_donaters_grpc_client
 from top_donaters.services import top_donaters_task_manager
 from top_donaters.websocket import ws_top_donaters_manager
 from utils.rabbitmq import rabbitmq
+from videos.grpc import widget_video_settings_grpc_client, widget_videos_grpc_client
+from videos.services import get_videos_ws_messages_handler, video_task_manager
+from videos.websocket import ws_videos_manager
 
 widgets_router = APIRouter(prefix="/ws")
 
@@ -296,3 +300,73 @@ async def websocket_top_donaters_endpoint(
     )
 
     await ws_top_donaters_manager.listen(setting_id, websocket)
+
+
+@widgets_router.websocket("/videos/")
+async def websocket_videos_endpoint(
+    websocket: WebSocket,
+    widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
+):
+    author_id = widget_token_info.author_id
+    widget_video_settings = await widget_video_settings_grpc_client.get_video_settings(
+        author_id, datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+    )
+    if not widget_video_settings:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "widget video settings not found")
+
+    await ws_videos_manager.connect(author_id, websocket)
+    message = WidgetMessage.make_widget_video_settings_message(widget_video_settings)
+    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
+
+    widget_video_settings_key = (author_id, "broadcast_widget_video_settings")
+
+    async def _stop_widget_video_settings_tasks():
+        await ws_videos_manager.stop_single_async_task(widget_video_settings_key)
+
+    ws_videos_manager.register_on_empty(author_id, _stop_widget_video_settings_tasks)
+
+    await video_task_manager.start_single_schedule_task(
+        widget_video_settings_key,
+        config.CHECK_NEW_WIDGET_VIDEO_SETTINGS_INTERVAL,
+        ws_videos_manager.broadcast_widget_video_settings,
+        widget_video_settings_key,
+        author_id,
+        TimestampPollState(updated_at=widget_video_settings.updated_at),
+    )
+
+    widget_videos = await widget_videos_grpc_client.get_videos(
+        author_id, datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+    )
+    if not widget_videos:
+        widget_videos = []
+
+    message = WidgetMessage.make_widget_videos_message(widget_videos)
+    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
+
+    widget_videos_key = (author_id, "broadcast_widget_videos")
+
+    async def _stop_widget_videos_tasks():
+        await ws_videos_manager.stop_single_async_task(widget_videos_key)
+
+    ws_videos_manager.register_on_empty(author_id, _stop_widget_videos_tasks)
+
+    await video_task_manager.start_single_schedule_task(
+        widget_videos_key,
+        config.CHECK_NEW_WIDGET_VIDEOS_INTERVAL,
+        ws_videos_manager.broadcast_widget_videos,
+        widget_videos_key,
+        author_id,
+        TimestampPollState(updated_at=datetime.datetime.fromtimestamp(0, datetime.timezone.utc)),
+    )
+
+    exchange, queue = await rabbitmq.declare_queue(config.VIDEOS_EXCHANGE, f"videos_{author_id}")
+    exchange, statuses_queue = await rabbitmq.declare_queue(config.VIDEOS_EXCHANGE, config.VIDEO_STATUS_QUEUE)
+
+    await video_task_manager.start_single_async_task(
+        (author_id, "listen_rabbit"),
+        rabbitmq.queue_iter,
+        queue,
+        ws_videos_manager.on_rmq_message(author_id),
+    )
+
+    await ws_videos_manager.listen(author_id, websocket, get_videos_ws_messages_handler(author_id, exchange))

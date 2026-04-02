@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package settings;
+
+service WidgetVideoSettingsService {
+    rpc RetrieveWidgetVideoSettings(RetrieveWidgetVideoSettingsRequest) returns (WidgetVideoSettings) {}
+}
+
+message RetrieveWidgetVideoSettingsRequest {
+    int64 author_id = 1;
+    string updated_at = 2;
+}
+
+message WidgetVideoSettings {
+    int64 id = 1;
+    bool play_randomly = 2;
+    bool show_video = 3;
+    int32 volume = 4;
+    int32 border_radius = 5;
+    string when_to_show_video_title = 6;
+    LastViewedWidgetVideo last_viewed_widget_video = 7;
+}
+
+message LastViewedWidgetVideo {
+    optional int64 video_id = 1;
+}

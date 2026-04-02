@@ -9,6 +9,7 @@ from models.alert import SkipAlert
 from models.donations import Donater, Donation
 from models.settings import ModerationSettings, StatisticWidgetSettings
 from models.top_donaters import DonationEvent
+from models.videos import Video, WidgetVideoSetting
 from models.widget_status import WidgetStatus
 
 
@@ -40,6 +41,8 @@ class WidgetMessage(BaseModel):
         | DonationEvent
         | ModerationSettings
         | list[Donation]
+        | WidgetVideoSetting
+        | list[Video]
     )
 
     @classmethod
@@ -81,3 +84,11 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_last_donations_list_message(cls, last_donations_list: list[Donation]):
         return cls(type=WidgetMessageTypes.update, action="last_donations_list", data=last_donations_list)
+
+    @classmethod
+    def make_widget_video_settings_message(cls, widget_video_settings: WidgetVideoSetting):
+        return cls(type=WidgetMessageTypes.update, action="widget_video_settings", data=widget_video_settings)
+
+    @classmethod
+    def make_widget_videos_message(cls, widget_videos: list[Video]):
+        return cls(type=WidgetMessageTypes.update, action="widget_videos", data=widget_videos)
