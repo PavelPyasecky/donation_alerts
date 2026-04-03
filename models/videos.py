@@ -1,4 +1,6 @@
 import datetime
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -9,9 +11,21 @@ class Video(BaseModel):
 
 
 class RabbitMQVideoStatus(BaseModel):
-    author_id: int
-    video_id: int
-    viewed_at: datetime.datetime
+    author_id: int | None = Field(default=None)
+    video_id: int | None = Field(default=None)
+    viewed_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    status: Literal["playing", "paused", "idle"] = Field(default="playing")
+
+
+class VideoControlCommand(BaseModel):
+    command: Literal["pause", "resume", "skip"]
+    video_id: int | None = Field(default=None)
+
+
+class VideoState(BaseModel):
+    video_id: int | None = Field(default=None)
+    status: Literal["playing", "paused", "idle"] = Field(default="idle")
+    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 class LastViewedVideo(BaseModel):
