@@ -28,7 +28,7 @@ class VideosWSManager(WSManager):
             return False
 
         widget_videos = await widget_videos_grpc_client.get_videos(author_id, poll.updated_at)
-        if widget_videos is None:
+        if not widget_videos:
             return True
 
         if widget_videos:
