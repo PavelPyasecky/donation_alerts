@@ -18,7 +18,8 @@ def handle_grpc_errors(func):
                 case grpc.StatusCode.PERMISSION_DENIED:
                     raise PermissionError(f"gRPC call permission denied: {details}")
                 case _:
-                    raise RuntimeError(f"gRPC call failed: {details}")
+                    logging.error(f"gRPC call failed: {details}", exc_info=True)
+                    return None
         except Exception as e:
             logging.error(f"Unexpected error in gRPC client: {e}", exc_info=True)
             raise e
