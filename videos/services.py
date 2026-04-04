@@ -232,6 +232,7 @@ async def apply_video_control(author_id: int, command: VideoControlCommand) -> t
     def updater(current_state: VideoState, current_queue: StoredVideoQueue | None):
         next_state = current_state.model_copy()
         now = datetime.datetime.now(datetime.timezone.utc)
+        next_queue: StoredVideoQueue | None = None
 
         match command.command:
             case "pause":
@@ -245,6 +246,39 @@ async def apply_video_control(author_id: int, command: VideoControlCommand) -> t
             case "skip":
                 next_state.status = "idle"
                 next_state.video_id = None
+            case "next":
+                if current_queue is None or not current_queue.video_ids:
+                    next_state.status = "idle"
+                    next_state.video_id = None
+                    next_queue = current_queue
+                else:
+                    ids = _move_current_video_to_front(
+                        current_queue.video_ids,
+                        current_state.video_id,
+                    )
+                    if not ids:
+                        next_state.status = "idle"
+                        next_state.video_id = None
+                        next_queue = current_queue
+                    elif len(ids) == 1:
+                        next_state.video_id = ids[0]
+                        next_state.status = "playing"
+                        next_queue = _build_stored_video_queue(
+                            current_queue,
+                            ids,
+                            current_queue.play_randomly,
+                            now,
+                        )
+                    else:
+                        rotated = ids[1:] + [ids[0]]
+                        next_state.video_id = rotated[0]
+                        next_state.status = "playing"
+                        next_queue = _build_stored_video_queue(
+                            current_queue,
+                            rotated,
+                            current_queue.play_randomly,
+                            now,
+                        )
             case "disable":
                 next_state.video_disabled = True
                 next_state.status = "idle"
@@ -256,7 +290,8 @@ async def apply_video_control(author_id: int, command: VideoControlCommand) -> t
                     next_state.volume = command.volume
 
         next_state.updated_at = now
-        next_queue = _move_queue_to_current_video(current_queue, next_state.video_id)
+        if next_queue is None:
+            next_queue = _move_queue_to_current_video(current_queue, next_state.video_id)
         queue_changed = current_queue != next_queue
         return next_state, next_queue, (next_state, queue_changed)
 
