@@ -39,6 +39,7 @@ CLEAN_UP_TASKS_INTERVAL = int(getenv("CLEAN_UP_TASKS_INTERVAL", 60))
 STREAMER_ONLINE_KEY = "streamer:{author_id}:online"
 STREAMER_CONNECTED_GROUPS_KEY = "streamer:{author_id}:connected_groups"
 STREAMER_VIDEO_STATE_KEY = "streamer:{author_id}:video_state"
+STREAMER_VIDEO_QUEUE_KEY = "streamer:{author_id}:video_queue"
 # Must exceed max interval between refresh_streamer_presence_ttl calls (alert broadcast schedules).
 STREAMER_PRESENCE_TTL_SECONDS = int(getenv("STREAMER_PRESENCE_TTL_SECONDS", 180))
 STREAMER_VIDEO_STATE_TTL_SECONDS = int(getenv("STREAMER_VIDEO_STATE_TTL_SECONDS", 180))

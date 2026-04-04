@@ -9,7 +9,15 @@ from models.alert import SkipAlert
 from models.donations import Donater, Donation
 from models.settings import ModerationSettings, StatisticWidgetSettings
 from models.top_donaters import DonationEvent
-from models.videos import RabbitMQVideoStatus, Video, VideoControlCommand, VideoState, WidgetVideoSetting
+from models.videos import (
+    RabbitMQVideoStatus,
+    Video,
+    VideoControlCommand,
+    VideoQueue,
+    VideoQueueUpdateCommand,
+    VideoState,
+    WidgetVideoSetting,
+)
 from models.widget_status import WidgetStatus
 
 
@@ -46,7 +54,9 @@ class WidgetMessage(BaseModel):
         | Video
         | RabbitMQVideoStatus
         | VideoControlCommand
+        | VideoQueueUpdateCommand
         | VideoState
+        | VideoQueue
     )
 
     @classmethod
@@ -104,3 +114,7 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_video_state_message(cls, video_state: VideoState):
         return cls(type=WidgetMessageTypes.update, action="video_state", data=video_state)
+
+    @classmethod
+    def make_video_queue_message(cls, video_queue: VideoQueue):
+        return cls(type=WidgetMessageTypes.update, action="video_queue", data=video_queue)
