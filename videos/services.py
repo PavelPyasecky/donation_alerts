@@ -89,14 +89,10 @@ def get_videos_ws_messages_handler(author_id: int, exchange: AbstractExchange, w
                                     )
                                 else:
                                     widget_videos = await widget_videos_grpc_client.get_videos(author_id, ZERO_DATETIME)
-                                    next_state, next_queue = await video_state_service.skip(
+                                    _, next_queue = await video_state_service.skip(
                                         author_id,
                                         original_videos=widget_videos or [],
                                         source=command.source,
-                                    )
-                                    await ws_manager.broadcast(
-                                        author_id,
-                                        WidgetMessage.make_video_state_message(next_state).model_dump(mode="json", by_alias=True),
                                     )
                                     if next_queue is not None:
                                         await ws_manager.broadcast(

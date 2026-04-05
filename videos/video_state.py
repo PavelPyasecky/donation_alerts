@@ -457,14 +457,6 @@ class VideoStateService:
                 play_randomly=current_queue.play_randomly,
                 updated_at=datetime.datetime.now(datetime.timezone.utc),
             )
-            next_state = next_state.model_copy(
-                update={
-                    "current_video_id": None,
-                    "video_source": None,
-                    "status": "idle",
-                    "updated_at": datetime.datetime.now(datetime.timezone.utc),
-                }
-            )
             queue_payload = self._materialize_video_queue(next_queue, original_videos) if should_update_queue else None
             return next_state, next_queue, (next_state, queue_payload)
 
