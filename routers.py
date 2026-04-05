@@ -31,7 +31,7 @@ from top_donaters.services import top_donaters_task_manager
 from top_donaters.websocket import ws_top_donaters_manager
 from utils.rabbitmq import rabbitmq
 from videos.grpc import donators_videos_grpc_client, widget_video_settings_grpc_client, widget_videos_grpc_client
-from videos.services import get_video_state, get_videos_ws_messages_handler, video_task_manager
+from videos.services import get_videos_ws_messages_handler, video_task_manager
 from videos.websocket import ws_videos_manager
 
 widgets_router = APIRouter(prefix="/ws")
@@ -342,10 +342,6 @@ async def websocket_videos_endpoint(
         widget_videos = []
 
     message = WidgetMessage.make_widget_videos_message(widget_videos)
-    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-
-    video_state = await get_video_state(author_id)
-    message = WidgetMessage.make_video_state_message(video_state)
     await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
     widget_videos_key = (author_id, "broadcast_widget_videos")
