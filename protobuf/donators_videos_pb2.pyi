@@ -21,11 +21,15 @@ class ListDonatorsVideosResponse(_message.Message):
     def __init__(self, videos: _Optional[_Iterable[_Union[DonatorVideo, _Mapping]]] = ...) -> None: ...
 
 class DonatorVideo(_message.Message):
-    __slots__ = ("id", "url", "created_at")
+    __slots__ = ("id", "url", "created_at", "donor_name", "amount")
     ID_FIELD_NUMBER: _ClassVar[int]
     URL_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    DONOR_NAME_FIELD_NUMBER: _ClassVar[int]
+    AMOUNT_FIELD_NUMBER: _ClassVar[int]
     id: int
     url: str
     created_at: str
-    def __init__(self, id: _Optional[int] = ..., url: _Optional[str] = ..., created_at: _Optional[str] = ...) -> None: ...
+    donor_name: str
+    amount: str
+    def __init__(self, id: _Optional[int] = ..., url: _Optional[str] = ..., created_at: _Optional[str] = ..., donor_name: _Optional[str] = ..., amount: _Optional[str] = ...) -> None: ...

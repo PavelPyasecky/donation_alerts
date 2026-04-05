@@ -6,6 +6,8 @@ class Video(BaseModel):
     id: int
     url: str
     created_at: datetime.datetime
+    donor_name: str | None = Field(None)
+    amount: str | None = Field(None)
 
 
 class RabbitMQVideoStatus(BaseModel):

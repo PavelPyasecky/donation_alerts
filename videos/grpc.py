@@ -5,11 +5,11 @@ from google.protobuf.json_format import MessageToDict
 from configs import config
 from models.videos import Video, WidgetVideoSetting
 from protobuf.widget_videos_pb2_grpc import VideosServiceStub
-from protobuf.widget_videos_pb2 import ListWidgetVideosRequest, ListWidgetVideosResponse
+from protobuf.widget_videos_pb2 import ListWidgetVideosRequest
 from protobuf.donators_videos_pb2_grpc import DonatorsVideosServiceStub
-from protobuf.donators_videos_pb2 import ListDonatorsVideosRequest, ListDonatorsVideosResponse
-from widget_video_settings_pb2_grpc import WidgetVideoSettingsServiceStub
-from widget_video_settings_pb2 import RetrieveWidgetVideoSettingsRequest, SetWidgetVideoVolumeRequest, WidgetVideoSettings
+from protobuf.donators_videos_pb2 import ListDonatorsVideosRequest
+from protobuf.widget_video_settings_pb2_grpc import WidgetVideoSettingsServiceStub
+from protobuf.widget_video_settings_pb2 import RetrieveWidgetVideoSettingsRequest, SetWidgetVideoVolumeRequest
 from utils.grpc import GRPCClient, handle_grpc_errors
 
 
