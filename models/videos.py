@@ -1,6 +1,4 @@
 import datetime
-from typing import Literal
-
 from pydantic import BaseModel, Field
 
 
@@ -11,40 +9,9 @@ class Video(BaseModel):
 
 
 class RabbitMQVideoStatus(BaseModel):
-    author_id: int | None = Field(default=None)
-    video_id: int | None = Field(default=None)
-    viewed_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-    status: Literal["playing", "paused", "idle"] = Field(default="playing")
-
-
-class VideoControlCommand(BaseModel):
-    command: Literal["pause", "resume", "skip", "next", "disable", "enable", "set_volume"]
-    video_id: int | None = Field(default=None)
-    volume: int | None = Field(default=None, ge=0, le=100)
-
-
-class VideoQueueUpdateCommand(BaseModel):
-    video_ids: list[int] = Field(default_factory=list)
-    version: int | None = Field(default=None, ge=0)
-
-
-class VideoState(BaseModel):
-    video_id: int | None = Field(default=None)
-    status: Literal["playing", "paused", "idle"] = Field(default="idle")
-    video_disabled: bool = Field(default=False)
-    volume: int | None = Field(default=None, ge=0, le=100)
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-
-
-class StoredVideoQueue(BaseModel):
-    video_ids: list[int] = Field(default_factory=list)
-    play_randomly: bool = Field(default=False)
-    version: int = Field(default=0, ge=0)
-    updated_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
-
-
-class VideoQueue(StoredVideoQueue):
-    videos: list[Video] = Field(default_factory=list)
+    author_id: int
+    video_id: int
+    viewed_at: datetime.datetime
 
 
 class LastViewedVideo(BaseModel):

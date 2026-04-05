@@ -10,7 +10,7 @@ from fastapi import (
 )
 
 from alerts.poll_state import ConnectedGroupsPollState
-from utils.poll_states import TimestampPollState, VideoCatalogPollState
+from utils.poll_states import TimestampPollState
 from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
@@ -31,13 +31,8 @@ from top_donaters.services import top_donaters_task_manager
 from top_donaters.websocket import ws_top_donaters_manager
 from utils.rabbitmq import rabbitmq
 from videos.grpc import donators_videos_grpc_client, widget_video_settings_grpc_client, widget_videos_grpc_client
-from videos.services import (
-    get_video_state,
-    get_videos_ws_messages_handler,
-    sync_video_queue_with_catalog,
-    video_task_manager,
-)
-from videos.websocket import _videos_fingerprint, ws_videos_manager
+from videos.services import get_videos_ws_messages_handler, video_task_manager
+from videos.websocket import ws_videos_manager
 
 widgets_router = APIRouter(prefix="/ws")
 
@@ -343,21 +338,13 @@ async def websocket_videos_endpoint(
     widget_videos = await widget_videos_grpc_client.get_videos(
         author_id, datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
     )
-    if not widget_videos:
-        widget_videos = []
-
-    video_state = await get_video_state(author_id)
-    message = WidgetMessage.make_video_state_message(video_state)
-    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-
-    video_queue, _ = await sync_video_queue_with_catalog(
+    state_message, queue_message, latest_updated_at = await ws_videos_manager.build_video_state_and_queue_messages(
         author_id,
-        widget_videos,
-        widget_video_settings.play_randomly,
-        video_state.video_id,
+        widget_videos=widget_videos,
+        play_randomly=widget_video_settings.play_randomly,
     )
-    message = WidgetMessage.make_video_queue_message(video_queue)
-    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
+    await websocket.send_json(state_message.model_dump(mode="json", by_alias=True))
+    await websocket.send_json(queue_message.model_dump(mode="json", by_alias=True))
 
     widget_videos_key = (author_id, "broadcast_widget_videos")
 
@@ -372,7 +359,7 @@ async def websocket_videos_endpoint(
         ws_videos_manager.broadcast_widget_videos,
         author_id,
         author_id,
-        VideoCatalogPollState(fingerprint=_videos_fingerprint(widget_videos)),
+        TimestampPollState(updated_at=latest_updated_at),
     )
 
     if get_pending_videos:
@@ -390,8 +377,4 @@ async def websocket_videos_endpoint(
         ws_videos_manager.on_rmq_message(author_id),
     )
 
-    await ws_videos_manager.listen(
-        author_id,
-        websocket,
-        get_videos_ws_messages_handler(author_id, exchange, ws_videos_manager),
-    )
+    await ws_videos_manager.listen(author_id, websocket, get_videos_ws_messages_handler(author_id, exchange, ws_videos_manager))
