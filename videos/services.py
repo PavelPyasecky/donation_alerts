@@ -42,6 +42,12 @@ def get_videos_ws_messages_handler(author_id: int, exchange: AbstractExchange, w
                                     author_id,
                                     WidgetMessage.make_video_state_message(next_state).model_dump(mode="json", by_alias=True),
                                 )
+                            case "idle":
+                                next_state = await video_state_service.idle(author_id)
+                                await ws_manager.broadcast(
+                                    author_id,
+                                    WidgetMessage.make_video_state_message(next_state).model_dump(mode="json", by_alias=True),
+                                )
                             case "disable_video":
                                 next_state = await video_state_service.disable_video(author_id)
                                 await ws_manager.broadcast(

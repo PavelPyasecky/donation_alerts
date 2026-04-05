@@ -16,7 +16,7 @@ class WidgetVideoState(BaseModel):
 
 
 class VideoControl(BaseModel):
-    command: Literal["play", "pause", "skip", "disable_video", "enable_video", "set_volume"]
+    command: Literal["play", "pause", "skip", "idle", "disable_video", "enable_video", "set_volume"]
     video_id: int | None = Field(None)
     source: Literal["widget", "donators"] | None = Field(None)
     volume: int | None = Field(None, ge=0, le=100)
