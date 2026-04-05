@@ -4,11 +4,17 @@ package settings;
 
 service WidgetVideoSettingsService {
     rpc RetrieveWidgetVideoSettings(RetrieveWidgetVideoSettingsRequest) returns (WidgetVideoSettings) {}
+    rpc SetVolume(SetWidgetVideoVolumeRequest) returns (WidgetVideoSettings) {}
 }
 
 message RetrieveWidgetVideoSettingsRequest {
     int64 author_id = 1;
     string updated_at = 2;
+}
+
+message SetWidgetVideoVolumeRequest {
+    int64 author_id = 1;
+    int32 volume = 2;
 }
 
 message WidgetVideoSettings {

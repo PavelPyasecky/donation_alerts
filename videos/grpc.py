@@ -8,8 +8,8 @@ from protobuf.widget_videos_pb2_grpc import VideosServiceStub
 from protobuf.widget_videos_pb2 import ListWidgetVideosRequest, ListWidgetVideosResponse
 from protobuf.donators_videos_pb2_grpc import DonatorsVideosServiceStub
 from protobuf.donators_videos_pb2 import ListDonatorsVideosRequest, ListDonatorsVideosResponse
-from protobuf.widget_video_settings_pb2_grpc import WidgetVideoSettingsServiceStub
-from protobuf.widget_video_settings_pb2 import RetrieveWidgetVideoSettingsRequest, WidgetVideoSettings
+from widget_video_settings_pb2_grpc import WidgetVideoSettingsServiceStub
+from widget_video_settings_pb2 import RetrieveWidgetVideoSettingsRequest, SetWidgetVideoVolumeRequest, WidgetVideoSettings
 from utils.grpc import GRPCClient, handle_grpc_errors
 
 
@@ -50,6 +50,16 @@ class WidgetVideoSettingsGrpcClient(GRPCClient):
     async def get_video_settings(self, author_id: int, updated_at: datetime.datetime) -> WidgetVideoSetting:
         response = await self.stub.RetrieveWidgetVideoSettings(
             RetrieveWidgetVideoSettingsRequest(author_id=author_id, updated_at=updated_at.isoformat())
+        )
+        data = MessageToDict(response, preserving_proto_field_name=True)
+        if not data:
+            return None
+        return WidgetVideoSetting(**data)
+
+    @handle_grpc_errors
+    async def set_volume(self, author_id: int, volume: int) -> WidgetVideoSetting:
+        response = await self.stub.SetVolume(
+            SetWidgetVideoVolumeRequest(author_id=author_id, volume=volume)
         )
         data = MessageToDict(response, preserving_proto_field_name=True)
         if not data:
