@@ -21,6 +21,14 @@ class SetWidgetVideoVolumeRequest(_message.Message):
     volume: int
     def __init__(self, author_id: _Optional[int] = ..., volume: _Optional[int] = ...) -> None: ...
 
+class SetShowVideoRequest(_message.Message):
+    __slots__ = ("author_id", "show_video")
+    AUTHOR_ID_FIELD_NUMBER: _ClassVar[int]
+    SHOW_VIDEO_FIELD_NUMBER: _ClassVar[int]
+    author_id: int
+    show_video: bool
+    def __init__(self, author_id: _Optional[int] = ..., show_video: bool = ...) -> None: ...
+
 class WidgetVideoSettings(_message.Message):
     __slots__ = ("id", "play_randomly", "show_video", "volume", "border_radius", "when_to_show_video_title", "font", "font_color", "font_style", "font_size", "border_color", "border_width", "created_at", "updated_at", "last_viewed_widget_video")
     ID_FIELD_NUMBER: _ClassVar[int]

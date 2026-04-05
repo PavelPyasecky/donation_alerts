@@ -5,6 +5,7 @@ package settings;
 service WidgetVideoSettingsService {
     rpc RetrieveWidgetVideoSettings(RetrieveWidgetVideoSettingsRequest) returns (WidgetVideoSettings) {}
     rpc SetVolume(SetWidgetVideoVolumeRequest) returns (WidgetVideoSettings) {}
+    rpc SetShowVideo(SetShowVideoRequest) returns (WidgetVideoSettings) {}
 }
 
 message RetrieveWidgetVideoSettingsRequest {
@@ -15,6 +16,11 @@ message RetrieveWidgetVideoSettingsRequest {
 message SetWidgetVideoVolumeRequest {
     int64 author_id = 1;
     int32 volume = 2;
+}
+
+message SetShowVideoRequest {
+    int64 author_id = 1;
+    bool show_video = 2;
 }
 
 message WidgetVideoSettings {

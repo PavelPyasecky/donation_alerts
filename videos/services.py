@@ -54,12 +54,14 @@ def get_videos_ws_messages_handler(author_id: int, exchange: AbstractExchange, w
                                     author_id,
                                     WidgetMessage.make_video_state_message(next_state).model_dump(mode="json", by_alias=True),
                                 )
+                                await widget_video_settings_grpc_client.set_show_video(author_id, False)
                             case "enable_video":
                                 next_state = await video_state_service.enable_video(author_id)
                                 await ws_manager.broadcast(
                                     author_id,
                                     WidgetMessage.make_video_state_message(next_state).model_dump(mode="json", by_alias=True),
                                 )
+                                await widget_video_settings_grpc_client.set_show_video(author_id, True)
                             case "set_volume":
                                 if command.volume is None:
                                     return

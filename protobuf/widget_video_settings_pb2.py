@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1bwidget_video_settings.proto\x12\x08settings\"K\n\"RetrieveWidgetVideoSettingsRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x12\n\nupdated_at\x18\x02 \x01(\t\"@\n\x1bSetWidgetVideoVolumeRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x0e\n\x06volume\x18\x02 \x01(\x05\"\xf5\x02\n\x13WidgetVideoSettings\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x15\n\rplay_randomly\x18\x02 \x01(\x08\x12\x12\n\nshow_video\x18\x03 \x01(\x08\x12\x0e\n\x06volume\x18\x04 \x01(\x05\x12\x15\n\rborder_radius\x18\x05 \x01(\x05\x12 \n\x18when_to_show_video_title\x18\x06 \x01(\t\x12\x0c\n\x04\x66ont\x18\x07 \x01(\t\x12\x12\n\nfont_color\x18\x08 \x01(\t\x12\x12\n\nfont_style\x18\t \x01(\t\x12\x11\n\tfont_size\x18\n \x01(\x05\x12\x14\n\x0c\x62order_color\x18\x0b \x01(\t\x12\x14\n\x0c\x62order_width\x18\x0c \x01(\x05\x12\x12\n\ncreated_at\x18\r \x01(\t\x12\x12\n\nupdated_at\x18\x0e \x01(\t\x12\x41\n\x18last_viewed_widget_video\x18\x0f \x01(\x0b\x32\x1f.settings.LastViewedWidgetVideo\";\n\x15LastViewedWidgetVideo\x12\x15\n\x08video_id\x18\x01 \x01(\x03H\x00\x88\x01\x01\x42\x0b\n\t_video_id2\xdf\x01\n\x1aWidgetVideoSettingsService\x12l\n\x1bRetrieveWidgetVideoSettings\x12,.settings.RetrieveWidgetVideoSettingsRequest\x1a\x1d.settings.WidgetVideoSettings\"\x00\x12S\n\tSetVolume\x12%.settings.SetWidgetVideoVolumeRequest\x1a\x1d.settings.WidgetVideoSettings\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1bwidget_video_settings.proto\x12\x08settings\"K\n\"RetrieveWidgetVideoSettingsRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x12\n\nupdated_at\x18\x02 \x01(\t\"@\n\x1bSetWidgetVideoVolumeRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x0e\n\x06volume\x18\x02 \x01(\x05\"<\n\x13SetShowVideoRequest\x12\x11\n\tauthor_id\x18\x01 \x01(\x03\x12\x12\n\nshow_video\x18\x02 \x01(\x08\"\xf5\x02\n\x13WidgetVideoSettings\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x15\n\rplay_randomly\x18\x02 \x01(\x08\x12\x12\n\nshow_video\x18\x03 \x01(\x08\x12\x0e\n\x06volume\x18\x04 \x01(\x05\x12\x15\n\rborder_radius\x18\x05 \x01(\x05\x12 \n\x18when_to_show_video_title\x18\x06 \x01(\t\x12\x0c\n\x04\x66ont\x18\x07 \x01(\t\x12\x12\n\nfont_color\x18\x08 \x01(\t\x12\x12\n\nfont_style\x18\t \x01(\t\x12\x11\n\tfont_size\x18\n \x01(\x05\x12\x14\n\x0c\x62order_color\x18\x0b \x01(\t\x12\x14\n\x0c\x62order_width\x18\x0c \x01(\x05\x12\x12\n\ncreated_at\x18\r \x01(\t\x12\x12\n\nupdated_at\x18\x0e \x01(\t\x12\x41\n\x18last_viewed_widget_video\x18\x0f \x01(\x0b\x32\x1f.settings.LastViewedWidgetVideo\";\n\x15LastViewedWidgetVideo\x12\x15\n\x08video_id\x18\x01 \x01(\x03H\x00\x88\x01\x01\x42\x0b\n\t_video_id2\xaf\x02\n\x1aWidgetVideoSettingsService\x12l\n\x1bRetrieveWidgetVideoSettings\x12,.settings.RetrieveWidgetVideoSettingsRequest\x1a\x1d.settings.WidgetVideoSettings\"\x00\x12S\n\tSetVolume\x12%.settings.SetWidgetVideoVolumeRequest\x1a\x1d.settings.WidgetVideoSettings\"\x00\x12N\n\x0cSetShowVideo\x12\x1d.settings.SetShowVideoRequest\x1a\x1d.settings.WidgetVideoSettings\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,10 +35,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_RETRIEVEWIDGETVIDEOSETTINGSREQUEST']._serialized_end=116
   _globals['_SETWIDGETVIDEOVOLUMEREQUEST']._serialized_start=118
   _globals['_SETWIDGETVIDEOVOLUMEREQUEST']._serialized_end=182
-  _globals['_WIDGETVIDEOSETTINGS']._serialized_start=185
-  _globals['_WIDGETVIDEOSETTINGS']._serialized_end=558
-  _globals['_LASTVIEWEDWIDGETVIDEO']._serialized_start=560
-  _globals['_LASTVIEWEDWIDGETVIDEO']._serialized_end=619
-  _globals['_WIDGETVIDEOSETTINGSSERVICE']._serialized_start=622
-  _globals['_WIDGETVIDEOSETTINGSSERVICE']._serialized_end=845
+  _globals['_SETSHOWVIDEOREQUEST']._serialized_start=184
+  _globals['_SETSHOWVIDEOREQUEST']._serialized_end=244
+  _globals['_WIDGETVIDEOSETTINGS']._serialized_start=247
+  _globals['_WIDGETVIDEOSETTINGS']._serialized_end=620
+  _globals['_LASTVIEWEDWIDGETVIDEO']._serialized_start=622
+  _globals['_LASTVIEWEDWIDGETVIDEO']._serialized_end=681
+  _globals['_WIDGETVIDEOSETTINGSSERVICE']._serialized_start=684
+  _globals['_WIDGETVIDEOSETTINGSSERVICE']._serialized_end=987
 # @@protoc_insertion_point(module_scope)
