@@ -379,6 +379,8 @@ class VideoStateService:
         def updater(current_state: WidgetVideoState, current_queue: StoredWidgetVideoQueue):
             next_state = current_state.model_copy(
                 update={
+                    "current_video_id": None,
+                    "video_source": None,
                     "status": "idle",
                     "updated_at": datetime.datetime.now(datetime.timezone.utc),
                 }
