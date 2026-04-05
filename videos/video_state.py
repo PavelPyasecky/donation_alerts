@@ -174,21 +174,25 @@ class VideoStateService:
         original_video_ids: list[int],
         current_video_id: int | None,
     ) -> list[int]:
+        normalized_original_video_ids = self._normalize_video_ids(original_video_ids)
+        if current_queue.original_video_ids == normalized_original_video_ids:
+            return self._merge_queue_with_original_order(current_queue.video_ids, normalized_original_video_ids)
+
         queue_anchor_video_id = self._get_queue_anchor_video_id(
             current_queue=current_queue,
-            original_video_ids=original_video_ids,
+            original_video_ids=normalized_original_video_ids,
             current_video_id=current_video_id,
         )
 
         if current_queue.play_randomly:
             next_queue_video_ids = self._merge_queue_with_original_order(
                 current_queue.video_ids,
-                original_video_ids,
+                normalized_original_video_ids,
             )
 
             return self._move_current_video_to_front(next_queue_video_ids, queue_anchor_video_id)
 
-        return self._rotate_queue_to_start_with(original_video_ids, queue_anchor_video_id)
+        return self._rotate_queue_to_start_with(normalized_original_video_ids, queue_anchor_video_id)
 
     def _build_queue_after_play_randomly_change(
         self,
