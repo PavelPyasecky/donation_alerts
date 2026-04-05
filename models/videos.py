@@ -18,7 +18,7 @@ class RabbitMQVideoStatus(BaseModel):
 
 
 class VideoControlCommand(BaseModel):
-    command: Literal["pause", "resume", "skip", "next", "disable", "enable", "set_volume"]
+    command: Literal["pause", "resume", "skip", "disable", "enable", "set_volume"]
     video_id: int | None = Field(default=None)
     volume: int | None = Field(default=None, ge=0, le=100)
 
