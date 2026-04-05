@@ -201,16 +201,23 @@ class VideoStateService:
         current_video_id: int | None,
         play_randomly: bool,
     ) -> list[int]:
+        effective_original_video_ids = self._merge_queue_with_original_order(
+            current_queue.original_video_ids,
+            original_video_ids,
+        )
+        if not effective_original_video_ids:
+            effective_original_video_ids = self._normalize_video_ids(original_video_ids)
+
         queue_anchor_video_id = self._get_queue_anchor_video_id(
             current_queue=current_queue,
-            original_video_ids=original_video_ids,
+            original_video_ids=effective_original_video_ids,
             current_video_id=current_video_id,
         )
 
         if play_randomly:
-            return self._shuffle_queue(original_video_ids, queue_anchor_video_id)
+            return self._shuffle_queue(effective_original_video_ids, queue_anchor_video_id)
 
-        return self._rotate_queue_to_start_with(original_video_ids, queue_anchor_video_id)
+        return self._rotate_queue_to_start_with(effective_original_video_ids, queue_anchor_video_id)
 
     async def _run_transaction(
         self,
@@ -283,20 +290,27 @@ class VideoStateService:
         original_videos: list[Video],
         play_randomly: bool,
     ) -> tuple[WidgetVideoState, WidgetVideoQueue]:
-        original_video_ids = self._get_original_video_ids(original_videos)
+        incoming_original_video_ids = self._get_original_video_ids(original_videos)
 
         def updater(current_state: WidgetVideoState, current_queue: StoredWidgetVideoQueue):
-            next_state = self._sanitize_state(current_state, original_video_ids)
+            effective_original_video_ids = self._merge_queue_with_original_order(
+                current_queue.original_video_ids,
+                incoming_original_video_ids,
+            )
+            if not effective_original_video_ids:
+                effective_original_video_ids = incoming_original_video_ids
+
+            next_state = self._sanitize_state(current_state, effective_original_video_ids)
             next_queue_video_ids = self._build_queue_after_play_randomly_change(
                 current_queue=current_queue,
-                original_video_ids=original_video_ids,
+                original_video_ids=effective_original_video_ids,
                 current_video_id=next_state.current_video_id,
                 play_randomly=play_randomly,
             )
             now = datetime.datetime.now(datetime.timezone.utc)
             next_queue = self._build_stored_queue(
                 current_queue=current_queue,
-                original_video_ids=original_video_ids,
+                original_video_ids=effective_original_video_ids,
                 queue_video_ids=next_queue_video_ids,
                 play_randomly=play_randomly,
                 updated_at=now,

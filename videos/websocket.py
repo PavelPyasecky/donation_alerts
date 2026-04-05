@@ -62,15 +62,16 @@ class VideosWSManager(WSManager):
         if not self.is_author_connected(ws_key):
             return False
 
-        widget_videos = await widget_videos_grpc_client.get_videos(author_id, poll.updated_at)
-        if not widget_videos:
-            return True
-
-        if widget_videos:
-            poll.updated_at = max(video.created_at for video in widget_videos)
-
         widget_video_settings = await widget_video_settings_grpc_client.get_video_settings(author_id, ZERO_DATETIME)
         if widget_video_settings is None:
+            return True
+
+        widget_videos = await widget_videos_grpc_client.get_videos(author_id, ZERO_DATETIME)
+        poll.updated_at = max((video.created_at for video in widget_videos), default=ZERO_DATETIME)
+
+        current_original_video_ids = list(dict.fromkeys(video.id for video in widget_videos))
+        stored_queue = await video_state_service.get_stored_video_queue(author_id)
+        if stored_queue.original_video_ids == current_original_video_ids:
             return True
 
         _, queue_message, _ = await self.build_video_state_and_queue_messages(
