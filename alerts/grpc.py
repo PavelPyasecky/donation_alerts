@@ -117,3 +117,4 @@ alert_settings_grpc_client = AlertSettingsGRPCClient(config.GRPC_SERVER_URL)
 alerts_grpc_client = AlertSGRPCClient(config.GRPC_SERVER_URL)
 ban_words_grpc_client = BanWordsGRPCClient(config.GRPC_SERVER_URL)
 moderation_settings_grpc_client = ModerationSettingsGRPCClient(config.GRPC_SERVER_URL)
+
