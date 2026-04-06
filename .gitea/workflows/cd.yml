@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_changed: ${{ steps.manual.outputs.image_changed || steps.filter.outputs.image }}
-      deploy_changed: ${{ steps.manual.outputs.deploy_changed || steps.filter.outputs.image || steps.filter.outputs.deploy }}
+      deploy_changed: ${{ steps.manual.outputs.deploy_changed == 'true' || steps.filter.outputs.image == 'true' || steps.filter.outputs.deploy == 'true' }}
       image_repository: ${{ steps.repository.outputs.image_repository }}
     steps:
       - name: Checkout code
