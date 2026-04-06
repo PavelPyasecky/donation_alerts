@@ -16,6 +16,14 @@ class RabbitMQVideoStatus(BaseModel):
     viewed_at: datetime.datetime
 
 
+class DeleteDonatorVideoPayload(BaseModel):
+    id: int
+
+
+class CleanDonatorVideosPayload(BaseModel):
+    pass
+
+
 class LastViewedVideo(BaseModel):
     video_id: int | None = Field(None)
 

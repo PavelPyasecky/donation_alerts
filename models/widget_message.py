@@ -9,7 +9,13 @@ from models.alert import SkipAlert
 from models.donations import Donater, Donation
 from models.settings import ModerationSettings, StatisticWidgetSettings
 from models.top_donaters import DonationEvent
-from models.videos import RabbitMQVideoStatus, Video, WidgetVideoSetting
+from models.videos import (
+    CleanDonatorVideosPayload,
+    DeleteDonatorVideoPayload,
+    RabbitMQVideoStatus,
+    Video,
+    WidgetVideoSetting,
+)
 from models.widget_status import WidgetStatus
 from models.video_state import VideoControl, WidgetVideoQueue, WidgetVideoState
 
@@ -46,6 +52,8 @@ class WidgetMessage(BaseModel):
         | list[Video]
         | Video
         | RabbitMQVideoStatus
+        | DeleteDonatorVideoPayload
+        | CleanDonatorVideosPayload
         | VideoControl
         | WidgetVideoState
         | WidgetVideoQueue
