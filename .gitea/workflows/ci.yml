@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ["main", "dev"]
+  push:
+    branches: ["main", "dev"]
+
+env:
+  REGISTRY: a2413b08-pandasway.registry.twcstorage.ru
+  REGISTRY_USERNAME: a2413b08-pandasway
+
+jobs:
+  detect-changes:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    outputs:
+      image_changed: ${{ steps.filter.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: .gitea/path-filters.yml
+
+  build-image:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.image_changed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Resolve cache ref
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            echo "CACHE_REF=${{ env.REGISTRY }}/pandas-way-core/dev/donation_alerts-app:buildcache" >> "$GITHUB_ENV"
+          else
+            echo "CACHE_REF=${{ env.REGISTRY }}/pandas-way-core/donation_alerts-app:buildcache" >> "$GITHUB_ENV"
+          fi
+      - name: Login to Timeweb Registry for cache
+        if: ${{ github.event_name == 'push' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ secrets.TIMEWEB_REGISTRY_TOKEN }}
+      - name: Build image with shared cache
+        if: ${{ github.event_name == 'push' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          cache-from: type=registry,ref=${{ env.CACHE_REF }}
+          cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          provenance: false
+      - name: Build image without cache publish
+        if: ${{ github.event_name != 'push' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          provenance: false

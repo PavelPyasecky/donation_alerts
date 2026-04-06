@@ -1,10 +1,5 @@
-x-app-build: &app_build
-  context: .
-  dockerfile: Dockerfile
-
 x-api-service: &api_service
-  build: *app_build
-  image: ${APP_IMAGE:-donation-alerts:local}
+  image: ${APP_IMAGE:-a2413b08-pandasway.registry.twcstorage.ru/pandas-way-core/donation_alerts-app:latest}
   pull_policy: always
   env_file:
     - .env

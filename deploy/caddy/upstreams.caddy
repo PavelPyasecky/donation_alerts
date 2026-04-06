@@ -1,0 +1,3 @@
+(api_proxy) {
+    reverse_proxy api_blue:8000
+}

@@ -9,5 +9,8 @@ wheels/
 # Virtual environments
 .venv
 .env
+.deploy.env
+.deploy-rollout.lock
+var/caddy/upstreams.caddy
 
 .vscode/

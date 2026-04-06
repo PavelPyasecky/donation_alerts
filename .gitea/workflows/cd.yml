@@ -1,0 +1,259 @@
+name: CD
+
+on:
+  push:
+    branches: ["main", "dev"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: a2413b08-pandasway.registry.twcstorage.ru
+  REGISTRY_USERNAME: a2413b08-pandasway
+
+jobs:
+  detect-changes:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    outputs:
+      image_changed: ${{ steps.manual.outputs.image_changed || steps.filter.outputs.image }}
+      deploy_changed: ${{ steps.manual.outputs.deploy_changed || steps.filter.outputs.image || steps.filter.outputs.deploy }}
+      image_repository: ${{ steps.repository.outputs.image_repository }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: manual
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          echo "image_changed=true" >> "$GITHUB_OUTPUT"
+          echo "deploy_changed=true" >> "$GITHUB_OUTPUT"
+      - id: filter
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: dorny/paths-filter@v3
+        with:
+          filters: .gitea/path-filters.yml
+      - id: repository
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            echo "image_repository=pandas-way-core/dev/donation_alerts" >> "$GITHUB_OUTPUT"
+          else
+            echo "image_repository=pandas-way-core/donation_alerts" >> "$GITHUB_OUTPUT"
+          fi
+
+  bump-version:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.image_changed == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - id: version
+        env:
+          SHOULD_BUMP: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          current_version="$(tr -d '[:space:]' < VERSION)"
+          next_version="$current_version"
+
+          if [ "$SHOULD_BUMP" = "true" ]; then
+            IFS='.' read -r major minor patch <<< "$current_version"
+            next_version="$major.$minor.$((patch + 1))"
+          fi
+
+          echo "value=$next_version" >> "$GITHUB_OUTPUT"
+
+  commit-version-bump:
+    needs:
+      - detect-changes
+      - bump-version
+    if: ${{ !failure() && !cancelled() && github.event_name == 'push' && needs.detect-changes.outputs.image_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Write version file
+        env:
+          VERSION_VALUE: ${{ needs.bump-version.outputs.version }}
+        shell: bash
+        run: printf '%s\n' "$VERSION_VALUE" > VERSION
+      - name: Commit version bump
+        shell: bash
+        run: |
+          if git diff --quiet -- VERSION; then
+            exit 0
+          fi
+
+          git add VERSION
+          git -c user.name='ci-bot' -c user.email='ci-bot@local' \
+            commit -m "chore: bump app version [skip ci]"
+          git push
+
+  build-push-image:
+    needs:
+      - detect-changes
+      - bump-version
+    if: ${{ needs.detect-changes.outputs.image_changed == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      image_ref: ${{ steps.image.outputs.value }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Resolve cache ref
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            echo "CACHE_REF=${{ env.REGISTRY }}/pandas-way-core/dev/donation_alerts-app:buildcache" >> "$GITHUB_ENV"
+          else
+            echo "CACHE_REF=${{ env.REGISTRY }}/pandas-way-core/donation_alerts-app:buildcache" >> "$GITHUB_ENV"
+          fi
+      - name: Resolve image revision
+        shell: bash
+        run: echo "IMAGE_REVISION=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Login to Timeweb Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ secrets.TIMEWEB_REGISTRY_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          cache-from: type=registry,ref=${{ env.CACHE_REF }}
+          cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          provenance: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ needs.detect-changes.outputs.image_repository }}-app:latest
+            ${{ env.REGISTRY }}/${{ needs.detect-changes.outputs.image_repository }}-app:${{ needs.bump-version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ needs.detect-changes.outputs.image_repository }}-app:${{ env.IMAGE_REVISION }}
+      - name: Resolve image reference
+        id: image
+        shell: bash
+        run: echo "value=${REGISTRY}/${{ needs.detect-changes.outputs.image_repository }}-app:${IMAGE_REVISION}" >> "$GITHUB_OUTPUT"
+
+  rollout:
+    needs:
+      - detect-changes
+      - build-push-image
+    if: ${{ !failure() && !cancelled() && needs.detect-changes.outputs.deploy_changed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve deploy target
+        env:
+          PROD_HOST: ${{ secrets.DEPLOY_HOST_PROD }}
+          DEV_HOST: ${{ secrets.DEPLOY_HOST_DEV }}
+          PROD_USER: ${{ secrets.DEPLOY_USER_PROD }}
+          DEV_USER: ${{ secrets.DEPLOY_USER_DEV }}
+          PROD_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY_PROD }}
+          DEV_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY_DEV }}
+          PROD_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS_PROD }}
+          DEV_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS_DEV }}
+          PROD_PATH: ${{ vars.DEPLOY_PATH_PROD }}
+          DEV_PATH: ${{ vars.DEPLOY_PATH_DEV }}
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" = "dev" ]; then
+            DEPLOY_HOST="$DEV_HOST"
+            DEPLOY_USER="$DEV_USER"
+            DEPLOY_PATH="$DEV_PATH"
+            DEPLOY_SSH_KEY="$DEV_SSH_KEY"
+            DEPLOY_KNOWN_HOSTS="$DEV_KNOWN_HOSTS"
+          else
+            DEPLOY_HOST="$PROD_HOST"
+            DEPLOY_USER="$PROD_USER"
+            DEPLOY_PATH="$PROD_PATH"
+            DEPLOY_SSH_KEY="$PROD_SSH_KEY"
+            DEPLOY_KNOWN_HOSTS="$PROD_KNOWN_HOSTS"
+          fi
+
+          for required_var in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY; do
+            if [ -z "${!required_var:-}" ]; then
+              echo "Missing required deploy setting: $required_var" >&2
+              exit 1
+            fi
+          done
+
+          {
+            echo "DEPLOY_HOST=$DEPLOY_HOST"
+            echo "DEPLOY_USER=$DEPLOY_USER"
+            echo "DEPLOY_PATH=$DEPLOY_PATH"
+            printf 'DEPLOY_SSH_KEY<<EOF\n%s\nEOF\n' "$DEPLOY_SSH_KEY"
+            if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+              printf 'DEPLOY_KNOWN_HOSTS<<EOF\n%s\nEOF\n' "$DEPLOY_KNOWN_HOSTS"
+            fi
+          } >> "$GITHUB_ENV"
+
+      - name: Configure SSH access
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          else
+            ssh-keyscan -H "$DEPLOY_HOST" > "$HOME/.ssh/known_hosts"
+          fi
+
+          chmod 644 "$HOME/.ssh/known_hosts"
+
+      - name: Sync deployment files to server
+        shell: bash
+        run: |
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "test -d '$DEPLOY_PATH'"
+
+          mkdir -p var/caddy
+
+          tar -czf - deploy.sh docker-compose.yml docker-compose.dev.yml docker-compose.prod.yml Caddyfile rabbitmq.conf deploy scripts var/caddy | \
+            ssh -o BatchMode=yes -o IdentitiesOnly=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+              "tar -xzf - -C '$DEPLOY_PATH'"
+
+      - name: Run rollout on server
+        env:
+          IMAGE_REF: ${{ needs.build-push-image.outputs.image_ref }}
+          DEPLOY_ENV: ${{ github.ref_name == 'dev' && 'dev' || 'prod' }}
+        shell: bash
+        run: |
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' DEPLOY_ENV='$DEPLOY_ENV' IMAGE_REF='$IMAGE_REF' bash -s" <<'EOF'
+          set -euo pipefail
+
+          [ -d "$DEPLOY_PATH" ] || {
+            echo "Deploy path not found: $DEPLOY_PATH" >&2
+            exit 1
+          }
+
+          cd "$DEPLOY_PATH"
+          [ -f "deploy.sh" ] || {
+            echo "Deploy script not found in $DEPLOY_PATH" >&2
+            exit 1
+          }
+
+          lock_file="$DEPLOY_PATH/.deploy-rollout.lock"
+          exec 9>"$lock_file"
+          flock 9
+
+          if [ -n "${IMAGE_REF:-}" ]; then
+            DEPLOY_ENV="$DEPLOY_ENV" bash deploy.sh "$IMAGE_REF"
+          else
+            DEPLOY_ENV="$DEPLOY_ENV" bash deploy.sh
+          fi
+          EOF

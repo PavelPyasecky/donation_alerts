@@ -1,13 +1,19 @@
+import /var/lib/caddy-runtime/upstreams.caddy
+
 {$DOMAIN}, http://{$PUBLIC_IP} {
     handle /ws* {
-        reverse_proxy api:8000
+        import api_proxy
     }
 
     handle /rabbitmq* {
         reverse_proxy rabbitmq:15672
     }
+
+    handle {
+        import api_proxy
+    }
 }
 
 {$API_DOMAIN} {
-    reverse_proxy api:8000
+    import api_proxy
 }
