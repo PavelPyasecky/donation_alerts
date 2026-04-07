@@ -81,7 +81,7 @@ class AlertsWSManager(WSManager):
         ban_words = await ban_words_grpc_client.get_ban_words(author_id, poll.updated_at)
         if ban_words is None:
             return True
-        poll.updated_at = ban_words.updated_at
+        poll.updated_at = datetime.datetime.now(datetime.timezone.utc)
         message = WidgetMessage.make_ban_words_message(ban_words)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True

@@ -19,4 +19,6 @@ message DonatorVideo {
     int64 id = 1;
     string url = 2;
     string created_at = 3;
+    string donor_name = 4;
+    string amount = 5;
 }

@@ -39,6 +39,16 @@ class WidgetVideoSettingsServiceStub(object):
                 request_serializer=widget__video__settings__pb2.RetrieveWidgetVideoSettingsRequest.SerializeToString,
                 response_deserializer=widget__video__settings__pb2.WidgetVideoSettings.FromString,
                 _registered_method=True)
+        self.SetVolume = channel.unary_unary(
+                '/settings.WidgetVideoSettingsService/SetVolume',
+                request_serializer=widget__video__settings__pb2.SetWidgetVideoVolumeRequest.SerializeToString,
+                response_deserializer=widget__video__settings__pb2.WidgetVideoSettings.FromString,
+                _registered_method=True)
+        self.SetShowVideo = channel.unary_unary(
+                '/settings.WidgetVideoSettingsService/SetShowVideo',
+                request_serializer=widget__video__settings__pb2.SetShowVideoRequest.SerializeToString,
+                response_deserializer=widget__video__settings__pb2.WidgetVideoSettings.FromString,
+                _registered_method=True)
 
 
 class WidgetVideoSettingsServiceServicer(object):
@@ -50,12 +60,34 @@ class WidgetVideoSettingsServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetVolume(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetShowVideo(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_WidgetVideoSettingsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'RetrieveWidgetVideoSettings': grpc.unary_unary_rpc_method_handler(
                     servicer.RetrieveWidgetVideoSettings,
                     request_deserializer=widget__video__settings__pb2.RetrieveWidgetVideoSettingsRequest.FromString,
+                    response_serializer=widget__video__settings__pb2.WidgetVideoSettings.SerializeToString,
+            ),
+            'SetVolume': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetVolume,
+                    request_deserializer=widget__video__settings__pb2.SetWidgetVideoVolumeRequest.FromString,
+                    response_serializer=widget__video__settings__pb2.WidgetVideoSettings.SerializeToString,
+            ),
+            'SetShowVideo': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetShowVideo,
+                    request_deserializer=widget__video__settings__pb2.SetShowVideoRequest.FromString,
                     response_serializer=widget__video__settings__pb2.WidgetVideoSettings.SerializeToString,
             ),
     }
@@ -85,6 +117,60 @@ class WidgetVideoSettingsService(object):
             target,
             '/settings.WidgetVideoSettingsService/RetrieveWidgetVideoSettings',
             widget__video__settings__pb2.RetrieveWidgetVideoSettingsRequest.SerializeToString,
+            widget__video__settings__pb2.WidgetVideoSettings.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetVolume(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/settings.WidgetVideoSettingsService/SetVolume',
+            widget__video__settings__pb2.SetWidgetVideoVolumeRequest.SerializeToString,
+            widget__video__settings__pb2.WidgetVideoSettings.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetShowVideo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/settings.WidgetVideoSettingsService/SetShowVideo',
+            widget__video__settings__pb2.SetShowVideoRequest.SerializeToString,
             widget__video__settings__pb2.WidgetVideoSettings.FromString,
             options,
             channel_credentials,

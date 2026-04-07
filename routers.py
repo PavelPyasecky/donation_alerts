@@ -31,7 +31,7 @@ from top_donaters.services import top_donaters_task_manager
 from top_donaters.websocket import ws_top_donaters_manager
 from utils.rabbitmq import rabbitmq
 from videos.grpc import donators_videos_grpc_client, widget_video_settings_grpc_client, widget_videos_grpc_client
-from videos.services import get_video_state, get_videos_ws_messages_handler, video_task_manager
+from videos.services import get_videos_ws_messages_handler, video_task_manager
 from videos.websocket import ws_videos_manager
 
 widgets_router = APIRouter(prefix="/ws")
@@ -338,15 +338,13 @@ async def websocket_videos_endpoint(
     widget_videos = await widget_videos_grpc_client.get_videos(
         author_id, datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
     )
-    if not widget_videos:
-        widget_videos = []
-
-    message = WidgetMessage.make_widget_videos_message(widget_videos)
-    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-
-    video_state = await get_video_state(author_id)
-    message = WidgetMessage.make_video_state_message(video_state)
-    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
+    state_message, queue_message, latest_updated_at = await ws_videos_manager.build_video_state_and_queue_messages(
+        author_id,
+        widget_videos=widget_videos,
+        play_randomly=widget_video_settings.play_randomly,
+    )
+    await websocket.send_json(state_message.model_dump(mode="json", by_alias=True))
+    await websocket.send_json(queue_message.model_dump(mode="json", by_alias=True))
 
     widget_videos_key = (author_id, "broadcast_widget_videos")
 
@@ -361,7 +359,7 @@ async def websocket_videos_endpoint(
         ws_videos_manager.broadcast_widget_videos,
         author_id,
         author_id,
-        TimestampPollState(updated_at=datetime.datetime.fromtimestamp(0, datetime.timezone.utc)),
+        TimestampPollState(updated_at=latest_updated_at),
     )
 
     if get_pending_videos:
@@ -379,4 +377,4 @@ async def websocket_videos_endpoint(
         ws_videos_manager.on_rmq_message(author_id),
     )
 
-    await ws_videos_manager.listen(author_id, websocket, get_videos_ws_messages_handler(author_id, exchange))
+    await ws_videos_manager.listen(author_id, websocket, get_videos_ws_messages_handler(author_id, exchange, ws_videos_manager))

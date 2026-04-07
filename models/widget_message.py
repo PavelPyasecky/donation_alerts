@@ -9,8 +9,15 @@ from models.alert import SkipAlert
 from models.donations import Donater, Donation
 from models.settings import ModerationSettings, StatisticWidgetSettings
 from models.top_donaters import DonationEvent
-from models.videos import RabbitMQVideoStatus, Video, VideoControlCommand, VideoState, WidgetVideoSetting
+from models.videos import (
+    CleanDonatorVideosPayload,
+    DeleteDonatorVideoPayload,
+    RabbitMQVideoStatus,
+    Video,
+    WidgetVideoSetting,
+)
 from models.widget_status import WidgetStatus
+from models.video_state import VideoControl, WidgetVideoQueue, WidgetVideoState
 
 
 class WidgetMessageTypes(Enum):
@@ -45,8 +52,11 @@ class WidgetMessage(BaseModel):
         | list[Video]
         | Video
         | RabbitMQVideoStatus
-        | VideoControlCommand
-        | VideoState
+        | DeleteDonatorVideoPayload
+        | CleanDonatorVideosPayload
+        | VideoControl
+        | WidgetVideoState
+        | WidgetVideoQueue
     )
 
     @classmethod
@@ -96,11 +106,15 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_widget_videos_message(cls, widget_videos: list[Video]):
         return cls(type=WidgetMessageTypes.update, action="widget_videos", data=widget_videos)
+
+    @classmethod
+    def make_video_state_message(cls, video_state: WidgetVideoState):
+        return cls(type=WidgetMessageTypes.update, action="video_state", data=video_state)
+
+    @classmethod
+    def make_video_queue_message(cls, video_queue: WidgetVideoQueue):
+        return cls(type=WidgetMessageTypes.update, action="video_queue", data=video_queue)
     
     @classmethod
     def make_donator_videos_message(cls, donator_videos: list[Video]):
         return cls(type=WidgetMessageTypes.update, action="donator_videos", data=donator_videos)
-
-    @classmethod
-    def make_video_state_message(cls, video_state: VideoState):
-        return cls(type=WidgetMessageTypes.update, action="video_state", data=video_state)
