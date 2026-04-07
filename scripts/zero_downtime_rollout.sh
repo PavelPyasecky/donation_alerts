@@ -26,6 +26,7 @@ esac
 compose_file="docker-compose.${environment_name}.yml"
 upstreams_template_file="deploy/caddy/upstreams.caddy"
 upstreams_file="var/caddy/upstreams.caddy"
+project_name="${COMPOSE_PROJECT_NAME:-$(basename "$PWD")}"
 
 read_release_value() {
   local file_path="$1"
@@ -58,6 +59,23 @@ compose() {
   APP_IMAGE="$app_image" "${compose_cmd[@]}" -f "$compose_file" "$@"
 }
 
+remove_service_containers() {
+  local target_service="$1"
+  local container_ids
+
+  container_ids="$(
+    docker ps -aq \
+      --filter "label=com.docker.compose.project=$project_name" \
+      --filter "label=com.docker.compose.service=$target_service"
+  )"
+
+  if [ -z "$container_ids" ]; then
+    return 0
+  fi
+
+  docker rm -f $container_ids >/dev/null
+}
+
 mkdir -p "$(dirname "$upstreams_file")"
 
 if [ ! -f "$upstreams_file" ]; then
@@ -83,6 +101,8 @@ else
 fi
 
 target_service="api_${next_color}"
+
+remove_service_containers "$target_service"
 
 if [ "$rollout_pull_images" = "true" ]; then
   docker pull "$app_image"
