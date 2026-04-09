@@ -3,7 +3,9 @@ import logging
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange
 
+from alerts.alers_state import alert_state_service
 from models.alert import RabbitMQAlertStatus
+from models.alert_state import WidgetAlertState
 from models.widget_message import WidgetMessage, WidgetMessageTypes
 from configs.redis import get_user_state_redis_conn
 from configs import config
@@ -12,7 +14,7 @@ from utils.task_manager import TaskManager
 logger = logging.getLogger(__name__)
 
 
-def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
+def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manager):
     async def wrapper(message_data: dict):
         message = WidgetMessage(**message_data)
         match message.type_:
@@ -23,6 +25,17 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange):
                         await exchange.publish(
                             message=Message(body=alert_status.model_dump_json().encode()),
                             routing_key=config.ALERT_STATUS_QUEUE,
+                        )
+                    case "alert_state":
+                        alert_state = WidgetAlertState.model_validate(message.data.model_dump())
+                        next_state = await alert_state_service.set_alert_state(
+                            author_id,
+                            current_alert_id=alert_state.current_alert_id,
+                            start_viewing_at=alert_state.start_viewing_at,
+                        )
+                        await ws_manager.broadcast(
+                            author_id,
+                            WidgetMessage.make_alert_state_message(next_state).model_dump(mode="json", by_alias=True),
                         )
 
     return wrapper

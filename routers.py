@@ -9,6 +9,7 @@ from fastapi import (
     WebSocketException,
 )
 
+from alerts.alers_state import alert_state_service
 from alerts.poll_state import ConnectedGroupsPollState
 from utils.poll_states import TimestampPollState
 from alerts.services import get_ws_messages_handler, alert_task_manager
@@ -51,6 +52,9 @@ async def websocket_alert_endpoint(
     key = widget_token_info.author_id
 
     await ws_alerts_manager.connect(key, websocket)
+    alert_state = await alert_state_service.get_alert_state(widget_token_info.author_id)
+    alert_state_message = WidgetMessage.make_alert_state_message(alert_state)
+    await websocket.send_json(alert_state_message.model_dump(mode="json", by_alias=True))
 
     async def _stop_key_tasks():
         await alert_task_manager.stop_single_async_task((key, -1))
@@ -197,7 +201,7 @@ async def websocket_alert_endpoint(
     await ws_alerts_manager.listen(
         key,
         websocket,
-        get_ws_messages_handler(widget_token_info.author_id, exchange),
+        get_ws_messages_handler(widget_token_info.author_id, exchange, ws_alerts_manager),
     )
 
 

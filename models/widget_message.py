@@ -3,6 +3,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from models.alert import Alert, AlertStatus, BanWord
+from models.alert_state import WidgetAlertState
 from models.campaign import Campaign
 from models.alert import AlertSettingsGroup
 from models.alert import SkipAlert
@@ -55,6 +56,7 @@ class WidgetMessage(BaseModel):
         | DeleteDonatorVideoPayload
         | CleanDonatorVideosPayload
         | VideoControl
+        | WidgetAlertState
         | WidgetVideoState
         | WidgetVideoQueue
     )
@@ -74,6 +76,10 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_pending_alerts_message(cls, alerts: list[Alert]):
         return cls(type=WidgetMessageTypes.update, action="pending_alerts", data=alerts)
+
+    @classmethod
+    def make_alert_state_message(cls, alert_state: WidgetAlertState):
+        return cls(type=WidgetMessageTypes.update, action="alert_state", data=alert_state)
 
     @classmethod
     def make_ban_words_message(cls, ban_words: BanWord):
