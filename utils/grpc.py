@@ -1,5 +1,34 @@
 import logging
+from collections import namedtuple
+
 import grpc
+
+from configs import config
+
+
+_ClientCallDetails = namedtuple(
+    "_ClientCallDetails",
+    ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
+)
+
+
+class GRPCAuthInterceptor(grpc.aio.UnaryUnaryClientInterceptor):
+    def __init__(self, header_name: str = "authorization", token: str = None):
+        self._header_name = header_name
+        self._token = token
+
+    async def intercept_unary_unary(self, continuation, client_call_details, request):
+        metadata = list(client_call_details.metadata or [])
+        metadata.append((self._header_name, self._token))
+
+        new_details = _ClientCallDetails(
+            method=client_call_details.method,
+            timeout=client_call_details.timeout,
+            metadata=metadata,
+            credentials=client_call_details.credentials,
+            wait_for_ready=client_call_details.wait_for_ready,
+        )
+        return await continuation(new_details, request)
 
 
 def handle_grpc_errors(func):
@@ -29,4 +58,6 @@ def handle_grpc_errors(func):
 
 class GRPCClient:
     def __init__(self, url):
-        self.channel = grpc.aio.insecure_channel(url)
+        self.channel = grpc.aio.insecure_channel(
+            url, interceptors=[GRPCAuthInterceptor(config.GRPC_AUTH_HEADER_NAME, config.GRPC_AUTH_TOKEN)]
+        )

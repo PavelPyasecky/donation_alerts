@@ -54,7 +54,8 @@ USER_STATE_REDIS_PORT = getenv("USER_STATE_REDIS_PORT")
 USER_STATE_REDIS_DB = getenv("USER_STATE_REDIS_DB")
 
 GRPC_SERVER_URL = getenv("GRPC_SERVER_URL")
-
+GRPC_AUTH_HEADER_NAME = getenv("GRPC_AUTH_HEADER_NAME")
+GRPC_AUTH_TOKEN = getenv("GRPC_AUTH_TOKEN")
 
 ALLOWED_HOSTS = [url.strip() for url in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if url.strip()]
 
