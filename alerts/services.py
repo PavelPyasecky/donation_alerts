@@ -32,6 +32,7 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                             author_id,
                             current_alert_id=alert_state.current_alert_id,
                             start_viewing_at=alert_state.start_viewing_at,
+                            current_donation_id=alert_state.current_donation_id,
                         )
                         await ws_manager.broadcast(
                             author_id,
