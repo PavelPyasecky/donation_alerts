@@ -4,8 +4,8 @@ import json
 from redis.asyncio import Redis
 
 from models.donations import Donater
-from models.top_donaters import DonationEvent
-from top_donaters.utils import _decode, _ensure_datetime, _parse_datetime, _to_decimal
+from models.statistics import DonationEvent
+from statistics_widget.utils import _decode, _ensure_datetime, _parse_datetime, _to_decimal
 
 
 class TopDonatersCache:
@@ -13,7 +13,7 @@ class TopDonatersCache:
         self.redis = redis
 
     def _prefix(self, author_id: int, period: str) -> str:
-        return f"top_donaters:{author_id}:{period}"
+        return f"statistics:{author_id}:{period}"
 
     def _keys(self, author_id: int, period: str) -> dict[str, str]:
         base = self._prefix(author_id, period)

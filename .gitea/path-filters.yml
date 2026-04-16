@@ -6,7 +6,7 @@ image:
   - 'protobuf/**'
   - 'protos/**'
   - 'services/**'
-  - 'top_donaters/**'
+  - 'statistics_widget/**'
   - 'utils/**'
   - 'videos/**'
   - 'main.py'

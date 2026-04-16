@@ -7,9 +7,9 @@ from models.donations import Donater, Donation
 from models.settings import StatisticWidgetSettings
 from protobuf.donations_pb2 import LastDonationsListRequest, UnionByDonorNamesDonation, UnionByDonorNamesListRequest
 from protobuf.donations_pb2_grpc import DonationServiceStub
-from protobuf.top_donaters_pb2 import RetrieveStatisticWidgetSettingsRequest
+from protobuf.statistics_widget_pb2 import RetrieveStatisticWidgetSettingsRequest
 from utils.grpc import GRPCClient, handle_grpc_errors
-from protobuf.top_donaters_pb2_grpc import StatisticWidgetSettingsServiceStub
+from protobuf.statistics_widget_pb2_grpc import StatisticWidgetSettingsServiceStub
 
 
 class TopDonatersGRPCClient(GRPCClient):
@@ -18,9 +18,9 @@ class TopDonatersGRPCClient(GRPCClient):
         self.stub = StatisticWidgetSettingsServiceStub(self.channel)
 
     @handle_grpc_errors
-    async def get_statistic_widget_settings(self, author_id: int, setting_id: int) -> StatisticWidgetSettings:
+    async def get_statistic_widget_settings(self, author_id: int, setting_id: int, updated_at: datetime.datetime) -> StatisticWidgetSettings:
         response = await self.stub.RetrieveStatisticWidgetSettings(
-            RetrieveStatisticWidgetSettingsRequest(author_id=author_id, setting_id=setting_id)
+            RetrieveStatisticWidgetSettingsRequest(author_id=author_id, setting_id=setting_id, updated_at=str(updated_at))
         )
         data = MessageToDict(response, preserving_proto_field_name=True)
         if not data:
@@ -56,5 +56,5 @@ class DonationsGRPCClient(GRPCClient):
         return [Donation(**obj) for obj in data.get("last_donations", [])]
 
 
-top_donaters_grpc_client = TopDonatersGRPCClient(config.GRPC_SERVER_URL)
+statistics_grpc_client = TopDonatersGRPCClient(config.GRPC_SERVER_URL)
 donations_grpc_client = DonationsGRPCClient(config.GRPC_SERVER_URL)

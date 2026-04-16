@@ -2,7 +2,7 @@ import datetime
 import uuid
 from decimal import Decimal, InvalidOperation
 
-from models.top_donaters import DonationEvent
+from models.statistics import DonationEvent
 from models.widget_message import WidgetMessage
 
 
@@ -35,33 +35,22 @@ def _parse_datetime(value: datetime.datetime | str | None) -> datetime.datetime 
         return None
 
 
-def _period_seconds(period: str) -> int | None:
+def period_to_seconds(period: str) -> int | None:
+    return period_to_days(period) * 24 * 60 * 60
+
+
+def period_to_days(period: str) -> int:
     match period:
         case "all_time":
-            return None
+            return 365
         case "last_month":
-            return 30 * 24 * 60 * 60
+            return 30
         case "last_week":
-            return 7 * 24 * 60 * 60
+            return 7
         case "last_day":
-            return 24 * 60 * 60
+            return 1
         case _:
-            return 24 * 60 * 60
-
-
-def _extract_donations(message: WidgetMessage) -> list[DonationEvent]:
-    if message.action == "test_alert":
-        return []
-
-    payloads = message.data if isinstance(message.data, list) else [message.data]
-    result: list[DonationEvent] = []
-
-    for payload in payloads:
-        donation = _payload_to_donation(payload)
-        if donation:
-            result.append(donation)
-
-    return result
+            return 1
 
 
 def _payload_to_donation(payload: object) -> DonationEvent | None:
@@ -73,13 +62,18 @@ def _payload_to_donation(payload: object) -> DonationEvent | None:
     created_at = getattr(payload, "timestamp", None) or getattr(payload, "created_at", None)
     donation_id = getattr(payload, "donation_id", None) or getattr(payload, "id", None)
     if donation_id is None:
-        donation_id = uuid.uuid4().hex
+        donation_id = uuid.uuid4().int % 2_147_483_647
+    else:
+        try:
+            donation_id = int(donation_id)
+        except (TypeError, ValueError):
+            donation_id = uuid.uuid4().int % 2_147_483_647
 
     return DonationEvent(
         donor_name=donor_name,
         amount=_to_decimal(amount),
-        created_at=_ensure_datetime(created_at),
-        donation_id=str(donation_id),
+        timestamp=_ensure_datetime(created_at),
+        donation_id=donation_id,
     )
 
 

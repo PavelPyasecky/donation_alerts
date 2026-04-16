@@ -1,4 +1,5 @@
 import datetime
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -6,6 +7,7 @@ class StatisticWidgetSettings(BaseModel):
     id: int
     title: str
     user: int
+    type: Literal["top_donators", "last_donations"]
 
     period: str
     elements_count: int

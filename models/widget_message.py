@@ -9,7 +9,7 @@ from models.alert import AlertSettingsGroup
 from models.alert import SkipAlert
 from models.donations import Donater, Donation
 from models.settings import ModerationSettings, StatisticWidgetSettings
-from models.top_donaters import DonationEvent
+from models.statistics import DonationEvent
 from models.videos import (
     CleanDonatorVideosPayload,
     DeleteDonatorVideoPayload,

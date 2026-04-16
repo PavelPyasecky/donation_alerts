@@ -11,6 +11,7 @@ from fastapi import (
 
 from alerts.alers_state import alert_state_service
 from alerts.poll_state import ConnectedGroupsPollState
+from configs.constants import ZERO_DATETIME
 from utils.poll_states import TimestampPollState
 from alerts.services import get_ws_messages_handler, alert_task_manager
 from alerts.websocket import ws_alerts_manager
@@ -27,9 +28,9 @@ from configs import config
 from models.widget_message import WidgetMessage
 from models.widget_token import WidgetTokenInfo
 from services.widgets import parse_widget_token
-from top_donaters.grpc import donations_grpc_client, top_donaters_grpc_client
-from top_donaters.services import top_donaters_task_manager
-from top_donaters.websocket import ws_top_donaters_manager
+from statistics_widget.grpc import statistics_grpc_client
+from statistics_widget.services import statistic_widget_task_manager
+from statistics_widget.websocket import ws_statistic_widget_manager
 from utils.rabbitmq import rabbitmq
 from videos.grpc import donators_videos_grpc_client, widget_video_settings_grpc_client, widget_videos_grpc_client
 from videos.services import get_videos_ws_messages_handler, video_task_manager
@@ -46,7 +47,6 @@ async def websocket_alert_endpoint(
     get_pending_donations: bool = False,
     get_ban_words: bool = False,
     get_moderation_settings: bool = False,
-    statistic_widget_setting_id: int = None,
     get_connected_groups_info: bool = False,
 ):
     key = widget_token_info.author_id
@@ -171,23 +171,6 @@ async def websocket_alert_endpoint(
 
         ws_alerts_manager.register_on_empty(connected_groups_info_key, _stop_check_max_groups_duration_tasks)
 
-    if statistic_widget_setting_id:
-        statistic_widget_settings = await top_donaters_grpc_client.get_statistic_widget_settings(
-            widget_token_info.author_id, statistic_widget_setting_id
-        )
-        if not statistic_widget_settings or statistic_widget_settings.user != widget_token_info.author_id:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "statistic widget settings not found")
-
-        message = WidgetMessage.make_statistic_widget_settings_message(statistic_widget_settings)
-        await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-
-        last_donations_list = await donations_grpc_client.get_last_donations_list(
-            widget_token_info.author_id, statistic_widget_settings.elements_count
-        )
-        message = WidgetMessage.make_last_donations_list_message(last_donations_list)
-
-        await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-
     exchange, queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, str(key))
     exchange, statuses_queue = await rabbitmq.declare_queue(config.ALERTS_EXCHANGE, config.ALERT_STATUS_QUEUE)
 
@@ -238,72 +221,53 @@ async def websocket_campaigns_endpoint(
     await ws_campaigns_manager.listen(campaign_id, websocket)
 
 
-@widgets_router.websocket("/top_donaters/")
-async def websocket_top_donaters_endpoint(
+@widgets_router.websocket("/statistic/")
+async def websocket_statistic_endpoint(
     websocket: WebSocket,
     setting_id: int,
     widget_token_info: WidgetTokenInfo = Depends(parse_widget_token),
 ):
     author_id = widget_token_info.author_id
-    statistic_widget_settings = await top_donaters_grpc_client.get_statistic_widget_settings(author_id, setting_id)
+    statistic_widget_settings = await statistics_grpc_client.get_statistic_widget_settings(
+        author_id, setting_id, ZERO_DATETIME
+    )
     if not statistic_widget_settings or statistic_widget_settings.user != author_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "statistic widget settings not found")
 
-    await ws_top_donaters_manager.connect(setting_id, websocket)
-    ws_top_donaters_manager.register_setting(
-        setting_id, author_id, statistic_widget_settings.period, statistic_widget_settings.elements_count
+    await ws_statistic_widget_manager.connect(author_id, websocket)
+    ws_statistic_widget_manager.register_setting(author_id, statistic_widget_settings)
+
+    ws_statistic_widget_manager.register_on_empty(
+        setting_id, lambda: ws_statistic_widget_manager.unregister_setting(author_id)
     )
-
-    async def _stop_top_donaters_tasks():
-        author_id_to_stop = ws_top_donaters_manager.unregister_setting(setting_id)
-        if author_id_to_stop is not None:
-            await top_donaters_task_manager.stop_single_async_task((author_id_to_stop, "listen_rabbit"))
-
-    ws_top_donaters_manager.register_on_empty(setting_id, _stop_top_donaters_tasks)
 
     message = WidgetMessage.make_statistic_widget_settings_message(statistic_widget_settings)
     await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
-    time_now = datetime.datetime.now(datetime.timezone.utc)
-    period_days = 1
-    match statistic_widget_settings.period:
-        case "all_time":
-            period_days = 365
-        case "last_month":
-            period_days = 30
-        case "last_week":
-            period_days = 7
-        case "last_day":
-            period_days = 1
+    await ws_statistic_widget_manager.first_broadcast_by_type(author_id, statistic_widget_settings)
 
-    start_time = time_now - datetime.timedelta(days=period_days)
-
-    union_by_donor_names_list = await donations_grpc_client.get_union_by_donor_names_list(
+    await statistic_widget_task_manager.start_single_schedule_task(
+        (author_id, "broadcast_widget_settings"),
+        config.CHECK_NEW_STATISTIC_WIDGET_SETTINGS_INTERVAL,
+        ws_statistic_widget_manager.broadcast_widget_settings,
         author_id,
-        start_time,
-        time_now,
-        statistic_widget_settings.elements_count,
-    )
-    message = WidgetMessage.make_union_by_donor_names_list_message(union_by_donor_names_list)
-    await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-
-    await ws_top_donaters_manager.seed_cache_if_empty(
-        author_id, statistic_widget_settings.period, union_by_donor_names_list
+        author_id,
+        setting_id,
     )
 
     _exchange, queue = await rabbitmq.declare_queue(
         config.ALERTS_EXCHANGE,
-        f"top_donaters_{author_id}",
+        f"statistics_{author_id}",
     )
 
-    await top_donaters_task_manager.start_single_async_task(
+    await statistic_widget_task_manager.start_single_async_task(
         (author_id, "listen_rabbit"),
         rabbitmq.queue_iter,
         queue,
-        ws_top_donaters_manager.on_rmq_message(author_id),
+        ws_statistic_widget_manager.on_rmq_message(author_id),
     )
 
-    await ws_top_donaters_manager.listen(setting_id, websocket)
+    await ws_statistic_widget_manager.listen(setting_id, websocket)
 
 
 @widgets_router.websocket("/videos/")
@@ -367,7 +331,9 @@ async def websocket_videos_endpoint(
     )
 
     if get_pending_videos:
-        pending_videos = await donators_videos_grpc_client.get_videos(author_id, datetime.datetime.fromtimestamp(0, datetime.timezone.utc))
+        pending_videos = await donators_videos_grpc_client.get_videos(
+            author_id, datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+        )
         message = WidgetMessage.make_donator_videos_message(pending_videos)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
@@ -381,4 +347,6 @@ async def websocket_videos_endpoint(
         ws_videos_manager.on_rmq_message(author_id),
     )
 
-    await ws_videos_manager.listen(author_id, websocket, get_videos_ws_messages_handler(author_id, exchange, ws_videos_manager))
+    await ws_videos_manager.listen(
+        author_id, websocket, get_videos_ws_messages_handler(author_id, exchange, ws_videos_manager)
+    )
