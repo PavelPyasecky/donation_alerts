@@ -36,6 +36,7 @@ class ModerationSettings(BaseModel):
     id: int
     is_active: bool = Field(False)
     duration: int
-    activation_amount: str
+    is_manual: bool = Field(False)
+    activation_amount: str = Field("")
     created_at: datetime.datetime
     updated_at: datetime.datetime

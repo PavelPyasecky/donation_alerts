@@ -18,4 +18,5 @@ message ModerationSetting {
     string activation_amount = 4;
     string created_at = 5;
     string updated_at = 6;
+    bool is_manual = 7;
 }

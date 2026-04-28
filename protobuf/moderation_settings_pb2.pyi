@@ -13,25 +13,19 @@ class RetrieveModerationSettingRequest(_message.Message):
     def __init__(self, author_id: _Optional[int] = ..., updated_at: _Optional[str] = ...) -> None: ...
 
 class ModerationSetting(_message.Message):
-    __slots__ = ("id", "is_active", "duration", "activation_amount", "created_at", "updated_at")
+    __slots__ = ("id", "is_active", "duration", "activation_amount", "created_at", "updated_at", "is_manual")
     ID_FIELD_NUMBER: _ClassVar[int]
     IS_ACTIVE_FIELD_NUMBER: _ClassVar[int]
     DURATION_FIELD_NUMBER: _ClassVar[int]
     ACTIVATION_AMOUNT_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
     UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
+    IS_MANUAL_FIELD_NUMBER: _ClassVar[int]
     id: int
     is_active: bool
     duration: int
     activation_amount: str
     created_at: str
     updated_at: str
-    def __init__(
-        self,
-        id: _Optional[int] = ...,
-        is_active: bool = ...,
-        duration: _Optional[int] = ...,
-        activation_amount: _Optional[str] = ...,
-        created_at: _Optional[str] = ...,
-        updated_at: _Optional[str] = ...,
-    ) -> None: ...
+    is_manual: bool
+    def __init__(self, id: _Optional[int] = ..., is_active: bool = ..., duration: _Optional[int] = ..., activation_amount: _Optional[str] = ..., created_at: _Optional[str] = ..., updated_at: _Optional[str] = ..., is_manual: bool = ...) -> None: ...
