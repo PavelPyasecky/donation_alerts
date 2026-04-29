@@ -4,7 +4,8 @@ from aio_pika import Message
 from aio_pika.abc import AbstractExchange
 
 from alerts.alers_state import alert_state_service
-from models.alert import RabbitMQAlertStatus
+from alerts.manual_moderation_state import manual_moderation_state_service
+from models.alert import ManualModerationAlertDecision, RabbitMQAlertStatus
 from models.alert_state import WidgetAlertState
 from models.widget_message import WidgetMessage, WidgetMessageTypes
 from configs.redis import get_user_state_redis_conn
@@ -33,10 +34,30 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                             current_alert_id=alert_state.current_alert_id,
                             start_viewing_at=alert_state.start_viewing_at,
                             current_donation_id=alert_state.current_donation_id,
+                            status=alert_state.status,
                         )
                         await ws_manager.broadcast(
                             author_id,
                             WidgetMessage.make_alert_state_message(next_state).model_dump(mode="json", by_alias=True),
+                        )
+                    case "allow" | "decline":
+                        payload = ManualModerationAlertDecision.model_validate(message.data.model_dump())
+                        alert_id = payload.id or payload.donation_id or payload.alert_id
+                        alert_ids = await manual_moderation_state_service.remove_alert(author_id, alert_id=alert_id)
+                        await ws_manager.broadcast(
+                            author_id,
+                            WidgetMessage.make_manual_moderation_alerts_message(alert_ids).model_dump(
+                                mode="json",
+                                by_alias=True,
+                            ),
+                        )
+                        await ws_manager.broadcast(
+                            author_id,
+                            WidgetMessage(
+                                type=WidgetMessageTypes.update,
+                                action=message.action,
+                                data=payload,
+                            ).model_dump(mode="json", by_alias=True),
                         )
 
     return wrapper

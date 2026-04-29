@@ -2,7 +2,7 @@ import datetime
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class Statuses(Enum):
@@ -23,6 +23,18 @@ class RabbitMQAlertStatus(AlertStatus):
 class SkipAlert(BaseModel):
     author_id: int
     donation_id: int
+
+
+class ManualModerationAlertDecision(BaseModel):
+    id: int | None = Field(None)
+    donation_id: int | None = Field(None)
+    alert_id: int | None = Field(None)
+
+    @model_validator(mode="after")
+    def require_alert_id(self):
+        if self.id is None and self.donation_id is None and self.alert_id is None:
+            raise ValueError("manual moderation alert id is required")
+        return self
 
 
 class AlertSetting(BaseModel):
