@@ -10,7 +10,6 @@ from fastapi import (
 )
 
 from alerts.alers_state import alert_state_service
-from alerts.manual_moderation_state import manual_moderation_state_service
 from alerts.poll_state import ConnectedGroupsPollState
 from configs.constants import ZERO_DATETIME
 from utils.poll_states import TimestampPollState
@@ -56,11 +55,6 @@ async def websocket_alert_endpoint(
     alert_state = await alert_state_service.get_alert_state(widget_token_info.author_id)
     alert_state_message = WidgetMessage.make_alert_state_message(alert_state)
     await websocket.send_json(alert_state_message.model_dump(mode="json", by_alias=True))
-    manual_moderation_alert_ids = await manual_moderation_state_service.get_alert_ids(widget_token_info.author_id)
-    manual_moderation_alerts_message = WidgetMessage.make_manual_moderation_alerts_message(
-        manual_moderation_alert_ids
-    )
-    await websocket.send_json(manual_moderation_alerts_message.model_dump(mode="json", by_alias=True))
 
     async def _stop_key_tasks():
         await alert_task_manager.stop_single_async_task((key, -1))
@@ -155,22 +149,6 @@ async def websocket_alert_endpoint(
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
         message = WidgetMessage.make_pending_alerts_message(pending_donations)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
-        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(
-            widget_token_info.author_id,
-            ZERO_DATETIME,
-        )
-        manually_moderated_alerts = [
-            alert
-            for alert in pending_donations
-            if manual_moderation_state_service.should_moderate_manually(moderation_settings, alert)
-        ]
-        if manually_moderated_alerts:
-            manual_moderation_alert_ids = await manual_moderation_state_service.add_alerts(
-                widget_token_info.author_id,
-                manually_moderated_alerts,
-            )
-            message = WidgetMessage.make_manual_moderation_alerts_message(manual_moderation_alert_ids)
-            await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 
     if get_connected_groups_info:
         connected_groups_info_key = (key, "connected_groups_info")

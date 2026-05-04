@@ -3,7 +3,6 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 
-from alerts.manual_moderation_state import manual_moderation_state_service
 from alerts.grpc import (
     alert_settings_group_grpc_client,
     alert_settings_grpc_client,
@@ -19,8 +18,6 @@ from alerts.services import (
     mark_streamer_online,
     refresh_streamer_presence_ttl,
 )
-from configs.constants import ZERO_DATETIME
-from models.alert import Alert
 from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
 from utils.poll_states import TimestampPollState
 from utils.websocket_manager import WSManager
@@ -114,27 +111,6 @@ class AlertsWSManager(WSManager):
                                 author_id, message_model.data.setting
                             )
                             message_model.data.setting = alert_setting
-                        case _:
-                            if isinstance(message_model.data, Alert):
-                                moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(
-                                    author_id,
-                                    ZERO_DATETIME,
-                                )
-                                if manual_moderation_state_service.should_moderate_manually(
-                                    moderation_settings,
-                                    message_model.data,
-                                ):
-                                    alert_ids = await manual_moderation_state_service.add_alert(
-                                        author_id,
-                                        message_model.data,
-                                    )
-                                    await self.broadcast(
-                                        ws_key,
-                                        WidgetMessage.make_manual_moderation_alerts_message(alert_ids).model_dump(
-                                            mode="json",
-                                            by_alias=True,
-                                        ),
-                                    )
 
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True

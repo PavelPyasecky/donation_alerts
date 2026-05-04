@@ -42,7 +42,6 @@ class WidgetMessage(BaseModel):
         | AlertStatus
         | WidgetStatus
         | list[Alert]
-        | list[int]
         | ManualModerationAlertDecision
         | ConnectedGroupsInfo
         | BanWord
@@ -78,10 +77,6 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_pending_alerts_message(cls, alerts: list[Alert]):
         return cls(type=WidgetMessageTypes.update, action="pending_alerts", data=alerts)
-
-    @classmethod
-    def make_manual_moderation_alerts_message(cls, alert_ids: list[int]):
-        return cls(type=WidgetMessageTypes.update, action="manual_moderation_alerts", data=alert_ids)
 
     @classmethod
     def make_alert_state_message(cls, alert_state: WidgetAlertState):

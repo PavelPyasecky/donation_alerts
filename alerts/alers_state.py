@@ -22,12 +22,14 @@ class AlertStateService:
         self,
         author_id: int,
         current_alert_id: int | None,
+        start_moderating_at: datetime.datetime | None,
         start_viewing_at: datetime.datetime | None,
         current_donation_id: int | None,
         status: str | None = None,
     ) -> WidgetAlertState:
         next_state = WidgetAlertState(
             current_alert_id=current_alert_id,
+            start_moderating_at=start_moderating_at,
             start_viewing_at=start_viewing_at,
             current_donation_id=current_donation_id,
             status=status,

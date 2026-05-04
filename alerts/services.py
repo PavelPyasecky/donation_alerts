@@ -1,10 +1,10 @@
+import datetime
 import logging
 
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange
 
 from alerts.alers_state import alert_state_service
-from alerts.manual_moderation_state import manual_moderation_state_service
 from models.alert import ManualModerationAlertDecision, RabbitMQAlertStatus
 from models.alert_state import WidgetAlertState
 from models.widget_message import WidgetMessage, WidgetMessageTypes
@@ -29,9 +29,13 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                         )
                     case "alert_state":
                         alert_state = WidgetAlertState.model_validate(message.data.model_dump())
+                        start_moderating_at = alert_state.start_moderating_at
+                        if alert_state.status == "moderation" and start_moderating_at is None:
+                            start_moderating_at = datetime.datetime.now(datetime.timezone.utc)
                         next_state = await alert_state_service.set_alert_state(
                             author_id,
                             current_alert_id=alert_state.current_alert_id,
+                            start_moderating_at=start_moderating_at,
                             start_viewing_at=alert_state.start_viewing_at,
                             current_donation_id=alert_state.current_donation_id,
                             status=alert_state.status,
@@ -42,11 +46,23 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                         )
                     case "allow" | "decline":
                         payload = ManualModerationAlertDecision.model_validate(message.data.model_dump())
-                        alert_id = payload.id or payload.donation_id or payload.alert_id
-                        alert_ids = await manual_moderation_state_service.remove_alert(author_id, alert_id=alert_id)
+                        current_state = await alert_state_service.get_alert_state(author_id)
+                        status = current_state.status
+                        start_viewing_at = current_state.start_viewing_at
+                        if message.action == "allow":
+                            status = "viewing"
+                            start_viewing_at = datetime.datetime.now(datetime.timezone.utc)
+                        next_state = await alert_state_service.set_alert_state(
+                            author_id,
+                            current_alert_id=payload.alert_id,
+                            start_moderating_at=current_state.start_moderating_at,
+                            start_viewing_at=start_viewing_at,
+                            current_donation_id=payload.donation_id,
+                            status=status,
+                        )
                         await ws_manager.broadcast(
                             author_id,
-                            WidgetMessage.make_manual_moderation_alerts_message(alert_ids).model_dump(
+                            WidgetMessage.make_alert_state_message(next_state).model_dump(
                                 mode="json",
                                 by_alias=True,
                             ),
