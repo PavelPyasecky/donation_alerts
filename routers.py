@@ -10,6 +10,7 @@ from fastapi import (
 )
 
 from alerts.alers_state import alert_state_service
+from alerts.alert_sequence import alert_sequence_service
 from alerts.poll_state import ConnectedGroupsPollState
 from configs.constants import ZERO_DATETIME
 from utils.poll_states import TimestampPollState
@@ -147,6 +148,7 @@ async def websocket_alert_endpoint(
 
     if get_pending_donations:
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
+        await alert_sequence_service.set_alerts(widget_token_info.author_id, pending_donations)
         message = WidgetMessage.make_pending_alerts_message(pending_donations)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 

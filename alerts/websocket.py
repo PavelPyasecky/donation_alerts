@@ -3,6 +3,7 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 
+from alerts.alert_sequence import alert_sequence_service
 from alerts.grpc import (
     alert_settings_group_grpc_client,
     alert_settings_grpc_client,
@@ -18,6 +19,7 @@ from alerts.services import (
     mark_streamer_online,
     refresh_streamer_presence_ttl,
 )
+from models.alert import Alert
 from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
 from utils.poll_states import TimestampPollState
 from utils.websocket_manager import WSManager
@@ -111,6 +113,9 @@ class AlertsWSManager(WSManager):
                                 author_id, message_model.data.setting
                             )
                             message_model.data.setting = alert_setting
+                        case _:
+                            if isinstance(message_model.data, Alert):
+                                await alert_sequence_service.add_alert(author_id, message_model.data)
 
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True
