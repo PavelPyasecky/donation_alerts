@@ -67,12 +67,13 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                         alert_state = WidgetAlertState.model_validate(message.data.model_dump())
                         current_state = await alert_state_service.get_alert_state(author_id)
                         is_manual_moderation = await is_manual_moderation_enabled(author_id)
-                        is_locked_on_manual_moderation = (
-                            is_manual_moderation
-                            and current_state.status == "moderation"
+                        is_locked_on_current_moderation = (
+                            current_state.status == "moderation"
                             and current_state.current_alert_id is not None
+                            and alert_state.status == "moderation"
+                            and alert_state.current_alert_id != current_state.current_alert_id
                         )
-                        if is_locked_on_manual_moderation:
+                        if is_locked_on_current_moderation:
                             next_state = current_state
                         elif is_manual_moderation and alert_state.status == "moderation":
                             queued_state = await set_first_queued_alert_to_moderation(author_id)
