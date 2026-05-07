@@ -14,7 +14,12 @@ from alerts.alert_sequence import alert_sequence_service
 from alerts.poll_state import ConnectedGroupsPollState
 from configs.constants import ZERO_DATETIME
 from utils.poll_states import TimestampPollState
-from alerts.services import get_ws_messages_handler, alert_task_manager
+from alerts.services import (
+    get_ws_messages_handler,
+    alert_task_manager,
+    reset_manual_moderation_state,
+    set_first_queued_alert_to_moderation,
+)
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
 from campaigns.websocket import ws_campaigns_manager
@@ -53,6 +58,12 @@ async def websocket_alert_endpoint(
     key = widget_token_info.author_id
 
     await ws_alerts_manager.connect(key, websocket)
+    moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(
+        widget_token_info.author_id,
+        ZERO_DATETIME,
+    )
+    if moderation_settings is None or not moderation_settings.is_manual:
+        await reset_manual_moderation_state(widget_token_info.author_id)
     alert_state = await alert_state_service.get_alert_state(widget_token_info.author_id)
     alert_state_message = WidgetMessage.make_alert_state_message(alert_state)
     await websocket.send_json(alert_state_message.model_dump(mode="json", by_alias=True))
@@ -121,9 +132,6 @@ async def websocket_alert_endpoint(
 
     if get_moderation_settings:
         moderation_settings_updated_at = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
-        moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(
-            widget_token_info.author_id, moderation_settings_updated_at
-        )
 
         moderation_settings_key = (key, "check_moderation_settings")
         if moderation_settings is not None:
@@ -149,6 +157,10 @@ async def websocket_alert_endpoint(
     if get_pending_donations:
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
         await alert_sequence_service.set_alerts(widget_token_info.author_id, pending_donations)
+        queued_state = await set_first_queued_alert_to_moderation(widget_token_info.author_id)
+        if queued_state is not None:
+            message = WidgetMessage.make_alert_state_message(queued_state)
+            await websocket.send_json(message.model_dump(mode="json", by_alias=True))
         message = WidgetMessage.make_pending_alerts_message(pending_donations)
         await websocket.send_json(message.model_dump(mode="json", by_alias=True))
 

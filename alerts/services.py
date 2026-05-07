@@ -6,6 +6,8 @@ from aio_pika.abc import AbstractExchange
 
 from alerts.alers_state import alert_state_service
 from alerts.alert_sequence import alert_sequence_service
+from alerts.grpc import moderation_settings_grpc_client
+from configs.constants import ZERO_DATETIME
 from models.alert import ManualModerationAlertDecision, RabbitMQAlertStatus
 from models.alert_state import WidgetAlertState
 from models.widget_message import WidgetMessage, WidgetMessageTypes
@@ -14,6 +16,51 @@ from configs import config
 from utils.task_manager import TaskManager
 
 logger = logging.getLogger(__name__)
+
+
+async def is_manual_moderation_enabled(author_id: int) -> bool:
+    moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(author_id, ZERO_DATETIME)
+    return bool(moderation_settings and moderation_settings.is_manual)
+
+
+async def set_first_queued_alert_to_moderation(author_id: int) -> WidgetAlertState | None:
+    if not await is_manual_moderation_enabled(author_id):
+        return None
+
+    current_state = await alert_state_service.get_alert_state(author_id)
+    if current_state.current_alert_id is not None and current_state.status in ("moderation", "viewing"):
+        return None
+
+    sequence = await alert_sequence_service.get_sequence(author_id)
+    if not sequence:
+        return None
+
+    first_item = sequence[0]
+    return await alert_state_service.set_alert_state(
+        author_id,
+        current_alert_id=first_item.alert_id,
+        start_moderating_at=datetime.datetime.now(datetime.timezone.utc),
+        start_viewing_at=None,
+        current_donation_id=first_item.donation_id,
+        status="moderation",
+    )
+
+
+async def reset_manual_moderation_state(author_id: int) -> WidgetAlertState | None:
+    await alert_sequence_service.clear_sequence(author_id)
+
+    current_state = await alert_state_service.get_alert_state(author_id)
+    if current_state.status != "moderation":
+        return None
+
+    return await alert_state_service.set_alert_state(
+        author_id,
+        current_alert_id=None,
+        start_moderating_at=None,
+        start_viewing_at=None,
+        current_donation_id=None,
+        status="idle",
+    )
 
 
 def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manager):
@@ -30,17 +77,36 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                         )
                     case "alert_state":
                         alert_state = WidgetAlertState.model_validate(message.data.model_dump())
-                        start_moderating_at = alert_state.start_moderating_at
-                        if alert_state.status == "moderation" and start_moderating_at is None:
-                            start_moderating_at = datetime.datetime.now(datetime.timezone.utc)
-                        next_state = await alert_state_service.set_alert_state(
-                            author_id,
-                            current_alert_id=alert_state.current_alert_id,
-                            start_moderating_at=start_moderating_at,
-                            start_viewing_at=alert_state.start_viewing_at,
-                            current_donation_id=alert_state.current_donation_id,
-                            status=alert_state.status,
+                        current_state = await alert_state_service.get_alert_state(author_id)
+                        is_manual_moderation = await is_manual_moderation_enabled(author_id)
+                        is_locked_on_manual_moderation = (
+                            is_manual_moderation
+                            and current_state.status == "moderation"
+                            and current_state.current_alert_id is not None
                         )
+                        if is_locked_on_manual_moderation:
+                            next_state = current_state
+                        elif not is_manual_moderation and alert_state.status == "moderation":
+                            reset_state = await reset_manual_moderation_state(author_id)
+                            next_state = reset_state if reset_state is not None else current_state
+                        elif is_manual_moderation and alert_state.status == "moderation":
+                            queued_state = await set_first_queued_alert_to_moderation(author_id)
+                            next_state = queued_state if queued_state is not None else current_state
+                        else:
+                            start_moderating_at = alert_state.start_moderating_at
+                            if alert_state.status == "moderation" and start_moderating_at is None:
+                                start_moderating_at = datetime.datetime.now(datetime.timezone.utc)
+                            next_state = await alert_state_service.set_alert_state(
+                                author_id,
+                                current_alert_id=alert_state.current_alert_id,
+                                start_moderating_at=start_moderating_at,
+                                start_viewing_at=alert_state.start_viewing_at,
+                                current_donation_id=alert_state.current_donation_id,
+                                status=alert_state.status,
+                            )
+                            queued_state = await set_first_queued_alert_to_moderation(author_id)
+                            if queued_state is not None:
+                                next_state = queued_state
                         await ws_manager.broadcast(
                             author_id,
                             WidgetMessage.make_alert_state_message(next_state).model_dump(mode="json", by_alias=True),

@@ -53,6 +53,9 @@ class AlertSequenceService:
             return []
         return [AlertSequenceItem.model_validate(item) for item in json.loads(state)]
 
+    async def clear_sequence(self, author_id: int) -> None:
+        await self.redis_client.delete(self._get_sequence_key(author_id))
+
     async def _set_sequence(self, author_id: int, sequence: list[AlertSequenceItem]) -> None:
         await self.redis_client.set(
             self._get_sequence_key(author_id),

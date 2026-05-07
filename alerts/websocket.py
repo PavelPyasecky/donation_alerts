@@ -18,6 +18,8 @@ from alerts.services import (
     mark_streamer_offline,
     mark_streamer_online,
     refresh_streamer_presence_ttl,
+    reset_manual_moderation_state,
+    set_first_queued_alert_to_moderation,
 )
 from models.alert import Alert
 from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
@@ -95,6 +97,26 @@ class AlertsWSManager(WSManager):
         poll.updated_at = moderation_settings.updated_at
         message = WidgetMessage.make_moderation_settings_message(moderation_settings)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
+        if moderation_settings.is_manual:
+            queued_state = await set_first_queued_alert_to_moderation(author_id)
+            if queued_state is not None:
+                await self.broadcast(
+                    ws_key,
+                    WidgetMessage.make_alert_state_message(queued_state).model_dump(
+                        mode="json",
+                        by_alias=True,
+                    ),
+                )
+        else:
+            reset_state = await reset_manual_moderation_state(author_id)
+            if reset_state is not None:
+                await self.broadcast(
+                    ws_key,
+                    WidgetMessage.make_alert_state_message(reset_state).model_dump(
+                        mode="json",
+                        by_alias=True,
+                    ),
+                )
         return True
 
     def on_rmq_message(self, ws_key: any, author_id: int):
@@ -116,6 +138,15 @@ class AlertsWSManager(WSManager):
                         case _:
                             if isinstance(message_model.data, Alert):
                                 await alert_sequence_service.add_alert(author_id, message_model.data)
+                                queued_state = await set_first_queued_alert_to_moderation(author_id)
+                                if queued_state is not None:
+                                    await self.broadcast(
+                                        ws_key,
+                                        WidgetMessage.make_alert_state_message(queued_state).model_dump(
+                                            mode="json",
+                                            by_alias=True,
+                                        ),
+                                    )
 
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True
