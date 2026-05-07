@@ -48,19 +48,7 @@ async def set_first_queued_alert_to_moderation(author_id: int) -> WidgetAlertSta
 
 async def reset_manual_moderation_state(author_id: int) -> WidgetAlertState | None:
     await alert_sequence_service.clear_sequence(author_id)
-
-    current_state = await alert_state_service.get_alert_state(author_id)
-    if current_state.status != "moderation":
-        return None
-
-    return await alert_state_service.set_alert_state(
-        author_id,
-        current_alert_id=None,
-        start_moderating_at=None,
-        start_viewing_at=None,
-        current_donation_id=None,
-        status="idle",
-    )
+    return None
 
 
 def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manager):
@@ -86,9 +74,6 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                         )
                         if is_locked_on_manual_moderation:
                             next_state = current_state
-                        elif not is_manual_moderation and alert_state.status == "moderation":
-                            reset_state = await reset_manual_moderation_state(author_id)
-                            next_state = reset_state if reset_state is not None else current_state
                         elif is_manual_moderation and alert_state.status == "moderation":
                             queued_state = await set_first_queued_alert_to_moderation(author_id)
                             next_state = queued_state if queued_state is not None else current_state
