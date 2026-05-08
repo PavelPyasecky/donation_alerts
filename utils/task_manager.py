@@ -24,8 +24,9 @@ class TaskManager:
     async def stop_single_async_task(self, key: any):
         async with self.single_tasks_lock:
             if key in self.single_tasks:
-                self.single_tasks[key].cancel()
-                self.single_tasks.pop(key)
+                task = self.single_tasks.pop(key)
+                if task is not asyncio.current_task():
+                    task.cancel()
 
     async def start_async_task(self, key: any, action: callable, *args, **kwargs):
         async with self.lock:
@@ -34,6 +35,34 @@ class TaskManager:
             task = asyncio.create_task(action(*args, **kwargs))
             self.tasks[key].append(task)
         return task
+
+    async def start_delayed_task(
+        self,
+        key: any,
+        delay_seconds: float,
+        action: callable,
+        *args,
+        **kwargs,
+    ) -> asyncio.Task:
+        async def delayed_action(*args, **kwargs):
+            await asyncio.sleep(delay_seconds)
+            return await action(*args, **kwargs)
+
+        return await self.start_async_task(key, delayed_action, *args, **kwargs)
+
+    async def start_single_delayed_task(
+        self,
+        key: any,
+        delay_seconds: float,
+        action: callable,
+        *args,
+        **kwargs,
+    ) -> asyncio.Task:
+        async def delayed_action(*args, **kwargs):
+            await asyncio.sleep(delay_seconds)
+            return await action(*args, **kwargs)
+
+        return await self.start_single_async_task(key, delayed_action, *args, **kwargs)
 
     async def stop_async_task(self, key: any):
         async with self.lock:

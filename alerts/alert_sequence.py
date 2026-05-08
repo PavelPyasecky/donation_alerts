@@ -9,6 +9,7 @@ from models.alert import Alert
 class AlertSequenceItem(BaseModel):
     alert_id: int
     donation_id: int | None = Field(None)
+    alert: Alert | None = Field(None)
 
 
 class AlertSequenceService:
@@ -53,18 +54,30 @@ class AlertSequenceService:
             return []
         return [AlertSequenceItem.model_validate(item) for item in json.loads(state)]
 
+    async def get_item(
+        self,
+        author_id: int,
+        alert_id: int,
+        donation_id: int | None,
+    ) -> AlertSequenceItem | None:
+        sequence = await self.get_sequence(author_id)
+        current_index = self._find_index(sequence, alert_id, donation_id)
+        if current_index is None:
+            return None
+        return sequence[current_index]
+
     async def clear_sequence(self, author_id: int) -> None:
         await self.redis_client.delete(self._get_sequence_key(author_id))
 
     async def _set_sequence(self, author_id: int, sequence: list[AlertSequenceItem]) -> None:
         await self.redis_client.set(
             self._get_sequence_key(author_id),
-            json.dumps([item.model_dump() for item in sequence]),
+            json.dumps([item.model_dump(mode="json") for item in sequence]),
         )
 
     @staticmethod
     def _make_item(alert: Alert) -> AlertSequenceItem:
-        return AlertSequenceItem(alert_id=alert.id, donation_id=alert.donation_id)
+        return AlertSequenceItem(alert_id=alert.id, donation_id=alert.donation_id, alert=alert)
 
     @staticmethod
     def _deduplicate(sequence: list[AlertSequenceItem]) -> list[AlertSequenceItem]:
