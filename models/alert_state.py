@@ -10,6 +10,7 @@ class WidgetAlertState(BaseModel):
     start_viewing_at: datetime.datetime | None = Field(None)
     current_donation_id: int | None = Field(None)
     status: Literal["idle", "moderation", "viewing"] | None = Field(None)
+    duration_seconds: int = Field(0)
 
     @model_validator(mode="after")
     def set_default_status(self):

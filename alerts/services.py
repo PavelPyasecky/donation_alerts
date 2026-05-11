@@ -1,57 +1,36 @@
+import asyncio
 import datetime
 import logging
+from typing import TYPE_CHECKING, Literal
 
 from aio_pika import Message
 from aio_pika.abc import AbstractExchange
 
 from alerts.alers_state import alert_state_service
-from alerts.alert_sequence import alert_sequence_service
+from alerts.alert_sequence import AlertSequenceData, alert_sequence_service
 from alerts.grpc import moderation_settings_grpc_client
-from configs.constants import ZERO_DATETIME
-from models.alert import ManualModerationAlertDecision, RabbitMQAlertStatus
+from configs.constants import NOW, ZERO_DATETIME
+from models.alert import Alert, ManualModerationAlertDecision, RabbitMQAlertStatus
 from models.alert_state import WidgetAlertState
 from models.widget_message import WidgetMessage, WidgetMessageTypes
 from configs.redis import get_user_state_redis_conn
 from configs import config
 from utils.task_manager import TaskManager
 
+
+if TYPE_CHECKING:
+    from alerts.websocket import AlertsWSManager
+
 logger = logging.getLogger(__name__)
 
 
-async def is_manual_moderation_enabled(author_id: int) -> bool:
-    moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(author_id, ZERO_DATETIME)
-    return bool(moderation_settings and moderation_settings.is_manual)
-
-
-async def set_first_queued_alert_to_moderation(author_id: int) -> WidgetAlertState | None:
-    if not await is_manual_moderation_enabled(author_id):
-        return None
-
-    current_state = await alert_state_service.get_alert_state(author_id)
-    if current_state.current_alert_id is not None and current_state.status in ("moderation", "viewing"):
-        return None
-
-    sequence = await alert_sequence_service.get_sequence(author_id)
-    if not sequence:
-        return None
-
-    first_item = sequence[0]
-    return await alert_state_service.set_alert_state(
-        author_id,
-        current_alert_id=first_item.alert_id,
-        start_moderating_at=datetime.datetime.now(datetime.timezone.utc),
-        start_viewing_at=None,
-        current_donation_id=first_item.donation_id,
-        status="moderation",
-    )
-
-
-async def reset_manual_moderation_state(author_id: int) -> WidgetAlertState | None:
-    await alert_sequence_service.clear_sequence(author_id)
-    return None
-
-
-def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manager):
+def get_ws_messages_handler(
+    author_id: int,
+    exchange: AbstractExchange,
+    alert_task_manager: "AlertTaskManager",
+    ws_manager: "AlertsWSManager",
+    ws_key: any,
+):
     async def wrapper(message_data: dict):
         message = WidgetMessage(**message_data)
         match message.type_:
@@ -63,89 +42,15 @@ def get_ws_messages_handler(author_id: int, exchange: AbstractExchange, ws_manag
                             message=Message(body=alert_status.model_dump_json().encode()),
                             routing_key=config.ALERT_STATUS_QUEUE,
                         )
-                    case "alert_state":
-                        alert_state = WidgetAlertState.model_validate(message.data.model_dump())
-                        current_state = await alert_state_service.get_alert_state(author_id)
-                        is_manual_moderation = await is_manual_moderation_enabled(author_id)
-                        is_locked_on_current_moderation = (
-                            current_state.status == "moderation"
-                            and current_state.current_alert_id is not None
-                            and alert_state.status == "moderation"
-                            and alert_state.current_alert_id != current_state.current_alert_id
-                        )
-                        if is_locked_on_current_moderation:
-                            next_state = current_state
-                        elif is_manual_moderation and alert_state.status == "moderation":
-                            queued_state = await set_first_queued_alert_to_moderation(author_id)
-                            next_state = queued_state if queued_state is not None else current_state
-                        else:
-                            start_moderating_at = alert_state.start_moderating_at
-                            if alert_state.status == "moderation" and start_moderating_at is None:
-                                start_moderating_at = datetime.datetime.now(datetime.timezone.utc)
-                            next_state = await alert_state_service.set_alert_state(
-                                author_id,
-                                current_alert_id=alert_state.current_alert_id,
-                                start_moderating_at=start_moderating_at,
-                                start_viewing_at=alert_state.start_viewing_at,
-                                current_donation_id=alert_state.current_donation_id,
-                                status=alert_state.status,
-                            )
-                            queued_state = await set_first_queued_alert_to_moderation(author_id)
-                            if queued_state is not None:
-                                next_state = queued_state
-                        await ws_manager.broadcast(
+                    case "allow" | "skip":
+                        await alert_task_manager.stop_single_async_task((author_id, "state_machine"))
+                        await alert_task_manager.start_single_async_task(
+                            (author_id, "state_machine"),
+                            run_alert_state_processing,
                             author_id,
-                            WidgetMessage.make_alert_state_message(next_state).model_dump(mode="json", by_alias=True),
-                        )
-                    case "allow" | "decline":
-                        payload = ManualModerationAlertDecision.model_validate(message.data.model_dump())
-                        current_state = await alert_state_service.get_alert_state(author_id)
-                        next_sequence_item = await alert_sequence_service.advance_past(
-                            author_id,
-                            payload.alert_id,
-                            payload.donation_id,
-                        )
-                        if message.action == "allow":
-                            next_state = await alert_state_service.set_alert_state(
-                                author_id,
-                                current_alert_id=payload.alert_id,
-                                start_moderating_at=current_state.start_moderating_at,
-                                start_viewing_at=datetime.datetime.now(datetime.timezone.utc),
-                                current_donation_id=payload.donation_id,
-                                status="viewing",
-                            )
-                        elif next_sequence_item is not None:
-                            next_state = await alert_state_service.set_alert_state(
-                                author_id,
-                                current_alert_id=next_sequence_item.alert_id,
-                                start_moderating_at=datetime.datetime.now(datetime.timezone.utc),
-                                start_viewing_at=None,
-                                current_donation_id=next_sequence_item.donation_id,
-                                status="moderation",
-                            )
-                        else:
-                            next_state = await alert_state_service.set_alert_state(
-                                author_id,
-                                current_alert_id=None,
-                                start_moderating_at=None,
-                                start_viewing_at=None,
-                                current_donation_id=None,
-                                status="idle",
-                            )
-                        await ws_manager.broadcast(
-                            author_id,
-                            WidgetMessage.make_alert_state_message(next_state).model_dump(
-                                mode="json",
-                                by_alias=True,
-                            ),
-                        )
-                        await ws_manager.broadcast(
-                            author_id,
-                            WidgetMessage(
-                                type=WidgetMessageTypes.update,
-                                action=message.action,
-                                data=payload,
-                            ).model_dump(mode="json", by_alias=True),
+                            ws_manager,
+                            ws_key,
+                            message.action,
                         )
 
     return wrapper
@@ -203,3 +108,152 @@ class AlertTaskManager(TaskManager):
 
 
 alert_task_manager = AlertTaskManager()
+
+
+IS_MANUAL_MODERATION_DURATION_CODE = -1
+
+
+async def _process_alert_state(
+    author_id: int,
+    alert_sequence_data: AlertSequenceData,
+    alert_state: WidgetAlertState,
+    first_alert: Alert,
+    action: Literal["allow", "skip"] | None = None,
+):
+    def _need_moderation(alert_sequence_data: AlertSequenceData, amount: str) -> bool:
+        return (
+            alert_sequence_data.moderation_settings.is_active
+            and alert_sequence_data.moderation_settings.activation_amount is not None
+            and alert_sequence_data.moderation_settings.activation_amount <= amount
+        )
+
+    def _is_manual_moderation_enabled(alert_sequence_data: AlertSequenceData, amount: str) -> bool:
+        return _need_moderation(alert_sequence_data, amount) and alert_sequence_data.moderation_settings.is_manual
+
+    next_trigger_delay = 1
+    need_broadcast = False
+
+    match alert_state.status:
+        case "moderation":
+            if action is None or action == "allow":
+                next_trigger_delay = alert_sequence_data.get_max_viewing_duration_seconds_by_amount(first_alert.amount)
+                alert_state = await alert_state_service.set_alert_state(
+                    author_id,
+                    current_alert_id=alert_state.current_alert_id,
+                    current_donation_id=alert_state.current_donation_id,
+                    start_moderating_at=alert_state.start_moderating_at,
+                    start_viewing_at=NOW(),
+                    status="viewing",
+                    duration_seconds=next_trigger_delay,
+                )
+                need_broadcast = True
+            elif action == "skip":
+                if first_alert:
+                    alert_sequence_service.pop_first_sequence_item(author_id)
+                    need_moderation = (
+                        alert_sequence_data.moderation_settings.need_moderation(first_alert.amount)
+                        if alert_sequence_data.moderation_settings is not None
+                        else False
+                    )
+                    next_trigger_delay = (
+                        alert_sequence_data.get_moderation_duration_seconds()
+                        if need_moderation
+                        else alert_sequence_data.get_max_viewing_duration_seconds_by_amount(first_alert.amount)
+                    )
+                    need_manual_moderation = _is_manual_moderation_enabled(alert_sequence_data, first_alert.amount)
+                    if need_manual_moderation:
+                        next_trigger_delay = IS_MANUAL_MODERATION_DURATION_CODE
+                    alert_state = await alert_state_service.set_alert_state(
+                        author_id,
+                        current_alert_id=first_alert.alert_id,
+                        current_donation_id=first_alert.donation_id,
+                        start_moderating_at=NOW() if need_moderation else None,
+                        start_viewing_at=None if need_moderation else NOW(),
+                        status="moderation" if need_moderation else "viewing",
+                        duration_seconds=next_trigger_delay,
+                    )
+                    need_broadcast = True
+        case "viewing" | "idle":
+            if first_alert:
+                alert_sequence_service.pop_first_sequence_item(author_id)
+                need_moderation = (
+                    alert_sequence_data.moderation_settings.need_moderation(first_alert.amount)
+                    if alert_sequence_data.moderation_settings is not None
+                    else False
+                )
+                need_manual_moderation = _is_manual_moderation_enabled(alert_sequence_data, first_alert.amount)
+                next_trigger_delay = (
+                    alert_sequence_data.get_moderation_duration_seconds()
+                    if need_moderation
+                    else alert_sequence_data.get_max_viewing_duration_seconds_by_amount(first_alert.amount)
+                )
+                if need_manual_moderation:
+                    next_trigger_delay = IS_MANUAL_MODERATION_DURATION_CODE
+                alert_state = await alert_state_service.set_alert_state(
+                    author_id,
+                    current_alert_id=first_alert.alert_id,
+                    current_donation_id=first_alert.donation_id,
+                    start_moderating_at=NOW() if need_moderation else None,
+                    start_viewing_at=None if need_moderation else NOW(),
+                    status="moderation" if need_moderation else "viewing",
+                    duration_seconds=next_trigger_delay,
+                )
+                need_broadcast = True
+
+    return next_trigger_delay, alert_state, need_broadcast
+
+
+async def run_alert_state_processing(
+    author_id: int, ws_manager: "AlertsWSManager", ws_key: any, action: Literal["allow", "skip"] | None = None
+):
+    while True:
+        if not ws_manager.is_author_connected(ws_key):
+            break
+        alert_sequence_data = alert_sequence_service.get_alert_sequence_data(author_id)
+        if not alert_sequence_data.connected_groups:
+            await asyncio.sleep(5)
+            continue
+
+        alert_state = await alert_state_service.get_alert_state(author_id)
+
+        if alert_state.duration_seconds == IS_MANUAL_MODERATION_DURATION_CODE and action is None:
+            break
+
+        need_broadcast = False
+
+        first_alert = alert_sequence_service.get_first_sequence_item(author_id)
+
+        action_duration_until = None
+        match alert_state.status:
+            case "moderation":
+                action_duration_until = alert_state.start_moderating_at + datetime.timedelta(
+                    seconds=alert_state.duration_seconds
+                )
+            case "viewing":
+                action_duration_until = alert_state.start_viewing_at + datetime.timedelta(
+                    seconds=alert_sequence_data.get_max_viewing_duration_seconds_by_amount(first_alert.amount)
+                )
+            case "idle":
+                action_duration_until = None
+
+        if action_duration_until is not None and action_duration_until > NOW() and action is None:
+            next_trigger_delay = max((action_duration_until - NOW()).total_seconds(), 1)
+            await asyncio.sleep(next_trigger_delay)
+            continue
+
+        next_trigger_delay, alert_state, need_broadcast = await _process_alert_state(
+            author_id, alert_sequence_data, alert_state, first_alert, action
+        )
+        action = None
+
+        if need_broadcast:
+            await ws_manager.broadcast(
+                ws_key,
+                WidgetMessage.make_alert_state_message(alert_state).model_dump(
+                    mode="json",
+                    by_alias=True,
+                ),
+            )
+        if next_trigger_delay == IS_MANUAL_MODERATION_DURATION_CODE:
+            break
+        await asyncio.sleep(next_trigger_delay)

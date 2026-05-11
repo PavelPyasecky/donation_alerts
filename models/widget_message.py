@@ -26,11 +26,6 @@ class WidgetMessageTypes(Enum):
     update = "update"
 
 
-class ConnectedGroupsInfo(BaseModel):
-    groups: list[AlertSettingsGroup]
-    connected_groups_ids: list[int]
-
-
 class WidgetMessage(BaseModel):
     type_: WidgetMessageTypes = Field(alias="type")
     action: str
@@ -43,7 +38,6 @@ class WidgetMessage(BaseModel):
         | WidgetStatus
         | list[Alert]
         | ManualModerationAlertDecision
-        | ConnectedGroupsInfo
         | BanWord
         | StatisticWidgetSettings
         | list[Donater]
@@ -60,7 +54,8 @@ class WidgetMessage(BaseModel):
         | WidgetAlertState
         | WidgetVideoState
         | WidgetVideoQueue
-    )
+        | None
+    ) = Field(None)
 
     @classmethod
     def make_alert_settings_group_message(cls, alert_settings_group: AlertSettingsGroup):
@@ -85,10 +80,6 @@ class WidgetMessage(BaseModel):
     @classmethod
     def make_ban_words_message(cls, ban_words: BanWord):
         return cls(type=WidgetMessageTypes.update, action="ban_words", data=ban_words)
-
-    @classmethod
-    def make_connected_groups_info_message(cls, connected_groups_info: ConnectedGroupsInfo):
-        return cls(type=WidgetMessageTypes.update, action="connected_groups_info", data=connected_groups_info)
 
     @classmethod
     def make_statistic_widget_settings_message(cls, statistic_widget_settings: StatisticWidgetSettings):

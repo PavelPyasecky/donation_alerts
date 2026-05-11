@@ -26,6 +26,7 @@ class AlertStateService:
         start_viewing_at: datetime.datetime | None,
         current_donation_id: int | None,
         status: str | None = None,
+        duration_seconds: int = 0,
     ) -> WidgetAlertState:
         next_state = WidgetAlertState(
             current_alert_id=current_alert_id,
@@ -33,6 +34,7 @@ class AlertStateService:
             start_viewing_at=start_viewing_at,
             current_donation_id=current_donation_id,
             status=status,
+            duration_seconds=duration_seconds,
         )
         await self.redis_client.set(self._get_alert_state_key(author_id), next_state.model_dump_json())
         return next_state

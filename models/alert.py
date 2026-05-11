@@ -1,6 +1,7 @@
 import datetime
 
 from enum import Enum
+from decimal import Decimal, InvalidOperation
 
 from pydantic import BaseModel, Field
 
@@ -30,13 +31,18 @@ class ManualModerationAlertDecision(BaseModel):
     donation_id: int
 
 
+class ActivationType(Enum):
+    equal = "equal"
+    over_equal = "over_equal"
+
+
 class AlertSetting(BaseModel):
     id: int
     is_active: bool = Field(False)
     is_default: bool = Field(False)
     type_: str = Field(alias="type")
 
-    activation_type: str | None = Field(None)
+    activation_type: ActivationType | None = Field(None)
     activation_amount: str | None = Field(None)
     sound_duration: int | None = Field(None)
     message_duration: int | None = Field(None)
@@ -81,12 +87,59 @@ class AlertSetting(BaseModel):
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
+    def get_alert_duration_seconds(self) -> int:
+        return int(self.sound_duration or 0) + int(self.message_duration or 0)
+
 
 class AlertSettingsGroup(BaseModel):
     id: int
     title: str
     updated_at: datetime.datetime
     alert_settings: list[AlertSetting]
+
+    def get_max_viewing_duration_seconds_by_amount(self, amount: str) -> int:
+        try:
+            amount_decimal = Decimal(str(amount))
+        except (TypeError, ValueError, InvalidOperation):
+            return 0
+
+        duration = 0
+        best_activation_amount = Decimal("-Infinity")
+
+        for alert_setting in self.alert_settings:
+            if not alert_setting.is_active:
+                continue
+
+            activation_amount: Decimal | None = None
+            if alert_setting.activation_amount is not None:
+                try:
+                    activation_amount = Decimal(str(alert_setting.activation_amount))
+                except (TypeError, ValueError, InvalidOperation):
+                    activation_amount = None
+
+            activation_type = alert_setting.activation_type
+            if activation_type == ActivationType.equal:
+                is_match = activation_amount is not None and amount_decimal == activation_amount
+            elif activation_type == ActivationType.over_equal:
+                is_match = activation_amount is not None and amount_decimal >= activation_amount
+            else:
+                is_match = True
+
+            if not is_match:
+                continue
+
+            current_activation_amount = (
+                activation_amount if activation_amount is not None else Decimal("-Infinity")
+            )
+            current_duration = alert_setting.get_alert_duration_seconds()
+
+            if current_activation_amount > best_activation_amount:
+                best_activation_amount = current_activation_amount
+                duration = current_duration
+            elif current_activation_amount == best_activation_amount:
+                duration = max(duration, current_duration)
+
+        return duration
 
 
 class Alert(BaseModel):

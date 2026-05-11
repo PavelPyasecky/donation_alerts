@@ -40,3 +40,9 @@ class ModerationSettings(BaseModel):
     activation_amount: str = Field("")
     created_at: datetime.datetime
     updated_at: datetime.datetime
+
+    def need_moderation(self, amount: str) -> bool:
+        return self.is_active and self.activation_amount is not None and self.activation_amount <= amount
+    
+    def is_manual_moderation_enabled(self, amount: str) -> bool:
+        return self.need_moderation(amount) and self.is_manual

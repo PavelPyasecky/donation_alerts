@@ -3,7 +3,7 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 
-from alerts.alert_sequence import alert_sequence_service
+from alerts.alert_sequence import AlertSequenceData, alert_sequence_service
 from alerts.grpc import (
     alert_settings_group_grpc_client,
     alert_settings_grpc_client,
@@ -18,11 +18,10 @@ from alerts.services import (
     mark_streamer_offline,
     mark_streamer_online,
     refresh_streamer_presence_ttl,
-    reset_manual_moderation_state,
-    set_first_queued_alert_to_moderation,
 )
+from configs.constants import ZERO_DATETIME
 from models.alert import Alert
-from models.widget_message import ConnectedGroupsInfo, WidgetMessage, WidgetMessageTypes
+from models.widget_message import WidgetMessage, WidgetMessageTypes
 from utils.poll_states import TimestampPollState
 from utils.websocket_manager import WSManager
 
@@ -38,9 +37,7 @@ class AlertsWSManager(WSManager):
         if not connected_groups:
             await mark_streamer_offline(author_id)
 
-    async def broadcast_alerts_group(
-        self, ws_key: any, author_id: int, group_id: int, poll: TimestampPollState
-    ):
+    async def broadcast_alerts_group(self, ws_key: any, author_id: int, group_id: int, poll: TimestampPollState):
         if not self.is_author_connected(ws_key):
             return False
 
@@ -58,7 +55,9 @@ class AlertsWSManager(WSManager):
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
-    async def broadcast_connected_groups_info(self, ws_key: any, author_id: int, poll: ConnectedGroupsPollState):
+    async def update_connected_groups_info(
+        self, ws_key: any, author_id: int, poll: ConnectedGroupsPollState, alert_sequence_data: AlertSequenceData
+    ):
         if not self.is_author_connected(ws_key):
             return False
 
@@ -66,19 +65,18 @@ class AlertsWSManager(WSManager):
 
         old_connected_groups_ids = poll.connected_group_ids
         poll.connected_group_ids = await get_connected_groups(author_id)
+        if old_connected_groups_ids == poll.connected_group_ids:
+            return True
+
         groups = await alert_settings_group_grpc_client.get_alert_settings_groups(
             author_id,
             poll.connected_group_ids,
-            poll.updated_at
-            if old_connected_groups_ids == poll.connected_group_ids
-            else datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+            ZERO_DATETIME,
         )
+        alert_sequence_data.connected_groups = groups
 
         poll.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
-        connected_groups_info = ConnectedGroupsInfo(groups=groups, connected_groups_ids=poll.connected_group_ids)
-        message = WidgetMessage.make_connected_groups_info_message(connected_groups_info)
-        await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
     async def broadcast_ban_words(self, ws_key: any, author_id: int, poll: TimestampPollState):
@@ -90,33 +88,17 @@ class AlertsWSManager(WSManager):
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
         return True
 
-    async def broadcast_moderation_settings(self, ws_key: any, author_id: int, poll: TimestampPollState):
+    async def broadcast_moderation_settings(
+        self, ws_key: any, author_id: int, poll: TimestampPollState, alert_sequence_data: AlertSequenceData
+    ):
         moderation_settings = await moderation_settings_grpc_client.get_moderation_settings(author_id, poll.updated_at)
         if moderation_settings is None:
             return True
+        alert_sequence_data.moderation_settings = moderation_settings
         poll.updated_at = moderation_settings.updated_at
         message = WidgetMessage.make_moderation_settings_message(moderation_settings)
         await self.broadcast(ws_key, message.model_dump(mode="json", by_alias=True))
-        if moderation_settings.is_manual:
-            queued_state = await set_first_queued_alert_to_moderation(author_id)
-            if queued_state is not None:
-                await self.broadcast(
-                    ws_key,
-                    WidgetMessage.make_alert_state_message(queued_state).model_dump(
-                        mode="json",
-                        by_alias=True,
-                    ),
-                )
-        else:
-            reset_state = await reset_manual_moderation_state(author_id)
-            if reset_state is not None:
-                await self.broadcast(
-                    ws_key,
-                    WidgetMessage.make_alert_state_message(reset_state).model_dump(
-                        mode="json",
-                        by_alias=True,
-                    ),
-                )
+
         return True
 
     def on_rmq_message(self, ws_key: any, author_id: int):
@@ -138,15 +120,6 @@ class AlertsWSManager(WSManager):
                         case _:
                             if isinstance(message_model.data, Alert):
                                 await alert_sequence_service.add_alert(author_id, message_model.data)
-                                queued_state = await set_first_queued_alert_to_moderation(author_id)
-                                if queued_state is not None:
-                                    await self.broadcast(
-                                        ws_key,
-                                        WidgetMessage.make_alert_state_message(queued_state).model_dump(
-                                            mode="json",
-                                            by_alias=True,
-                                        ),
-                                    )
 
             await self.broadcast(ws_key, message_model.model_dump(mode="json", by_alias=True))
             return True
