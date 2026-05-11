@@ -19,7 +19,6 @@ from alerts.services import (
     alert_task_manager,
     reset_manual_moderation_state,
     set_first_queued_alert_to_moderation,
-    stop_alert_playback,
 )
 from alerts.websocket import ws_alerts_manager
 from campaigns.services import campaign_task_manager
@@ -65,17 +64,13 @@ async def websocket_alert_endpoint(
     )
     if moderation_settings is None or not moderation_settings.is_manual:
         await reset_manual_moderation_state(widget_token_info.author_id)
-    queued_state = await set_first_queued_alert_to_moderation(widget_token_info.author_id, ws_alerts_manager)
     alert_state = await alert_state_service.get_alert_state(widget_token_info.author_id)
-    if queued_state is not None:
-        alert_state = queued_state
     alert_state_message = WidgetMessage.make_alert_state_message(alert_state)
     await websocket.send_json(alert_state_message.model_dump(mode="json", by_alias=True))
 
     async def _stop_key_tasks():
         await alert_task_manager.stop_single_async_task((key, -1))
         await alert_task_manager.stop_single_async_task((key, "connected_groups_info"))
-        await stop_alert_playback(key)
 
     ws_alerts_manager.register_on_empty(key, _stop_key_tasks)
 
@@ -162,7 +157,7 @@ async def websocket_alert_endpoint(
     if get_pending_donations:
         pending_donations = await alerts_grpc_client.get_pending_donations(widget_token_info.author_id)
         await alert_sequence_service.set_alerts(widget_token_info.author_id, pending_donations)
-        queued_state = await set_first_queued_alert_to_moderation(widget_token_info.author_id, ws_alerts_manager)
+        queued_state = await set_first_queued_alert_to_moderation(widget_token_info.author_id)
         if queued_state is not None:
             message = WidgetMessage.make_alert_state_message(queued_state)
             await websocket.send_json(message.model_dump(mode="json", by_alias=True))
